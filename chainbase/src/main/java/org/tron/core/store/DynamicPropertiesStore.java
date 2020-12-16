@@ -1013,12 +1013,25 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
         new BytesCapsule(ByteArray.fromLong(totalEnergyWeight)));
   }
 
+  public void saveTotalVoteWeight(long totalEnergyWeight) {
+    this.put(DynamicResourceProperties.TOTAL_VOTE_WEIGHT,
+        new BytesCapsule(ByteArray.fromLong(totalEnergyWeight)));
+  }
+
   public long getTotalEnergyWeight() {
     return Optional.ofNullable(getUnchecked(DynamicResourceProperties.TOTAL_ENERGY_WEIGHT))
         .map(BytesCapsule::getData)
         .map(ByteArray::toLong)
         .orElseThrow(
             () -> new IllegalArgumentException("not found TOTAL_ENERGY_WEIGHT"));
+  }
+
+  public long getTotalVoteWeight() {
+    return Optional.ofNullable(getUnchecked(DynamicResourceProperties.TOTAL_VOTE_WEIGHT))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found TOTAL_VOTE_WEIGHT"));
   }
 
   public void saveTotalNetLimit(long totalNetLimit) {
@@ -1654,6 +1667,10 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     return getAllowDelegateResource() == 1L;
   }
 
+  public boolean supportFreezeForVote() {
+    return true;
+  }
+
   public void saveAllowUpdateAccountName(long rate) {
     this.put(ALLOW_UPDATE_ACCOUNT_NAME,
         new BytesCapsule(ByteArray.fromLong(rate)));
@@ -1981,9 +1998,16 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   //The unit is trx
   public void addTotalEnergyWeight(long amount) {
-    long totalEnergyWeight = getTotalEnergyWeight();
+    long totalEnergyWeight = getTotalVoteWeight();
     totalEnergyWeight += amount;
     saveTotalEnergyWeight(totalEnergyWeight);
+  }
+
+  //The unit is trx
+  public void addTotalVoteWeight(long amount) {
+    long totalWeight = getTotalEnergyWeight();
+    totalWeight += amount;
+    saveTotalVoteWeight(totalWeight);
   }
 
   public void addTotalCreateAccountCost(long fee) {
@@ -2134,6 +2158,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     private static final byte[] TOTAL_ENERGY_WEIGHT = "TOTAL_ENERGY_WEIGHT".getBytes();
     private static final byte[] TOTAL_ENERGY_LIMIT = "TOTAL_ENERGY_LIMIT".getBytes();
     private static final byte[] BLOCK_ENERGY_USAGE = "BLOCK_ENERGY_USAGE".getBytes();
+    private static final byte[] TOTAL_VOTE_WEIGHT = "TOTAL_VOTE_WEIGHT".getBytes();
     private static final byte[] ADAPTIVE_RESOURCE_LIMIT_MULTIPLIER =
         "ADAPTIVE_RESOURCE_LIMIT_MULTIPLIER"
             .getBytes();

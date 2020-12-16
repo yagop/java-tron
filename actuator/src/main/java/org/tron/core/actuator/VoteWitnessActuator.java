@@ -125,7 +125,12 @@ public class VoteWitnessActuator extends AbstractActuator {
             ACCOUNT_EXCEPTION_STR + readableOwnerAddress + NOT_EXIST_STR);
       }
 
-      long tronPower = accountCapsule.getTronPower();
+      long tronPower = 0L;
+      if (chainBaseManager.getDynamicPropertiesStore().supportFreezeForVote()) {
+        tronPower = accountCapsule.getTronPower2();
+      } else {
+        tronPower = accountCapsule.getTronPower();
+      }
 
       sum = LongMath
           .checkedMultiply(sum, TRX_PRECISION); //trx -> drop. The vote count is based on TRX

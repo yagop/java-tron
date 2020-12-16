@@ -98,6 +98,20 @@ public class FreezeBalanceActuator extends AbstractActuator {
         dynamicStore
             .addTotalEnergyWeight(frozenBalance / TRX_PRECISION);
         break;
+      case VOTE:
+        if (dynamicStore.supportFreezeForVote()) {
+          long newFrozenBalanceForVote =
+              frozenBalance + accountCapsule.getAccountResource()
+                  .getFrozenBalanceForVote()
+                  .getFrozenBalance();
+          accountCapsule.setFrozenForVote(newFrozenBalanceForVote, expireTime);
+          dynamicStore
+              .addTotalVoteWeight(frozenBalance / TRX_PRECISION);
+        } else {
+          //this should never happen
+        }
+        break;
+
       default:
         logger.debug("Resource Code Error.");
     }
@@ -182,12 +196,28 @@ public class FreezeBalanceActuator extends AbstractActuator {
 
     switch (freezeBalanceContract.getResource()) {
       case BANDWIDTH:
-        break;
       case ENERGY:
         break;
+      case VOTE:
+        if (dynamicStore.supportFreezeForVote()) {
+          byte[] receiverAddress = freezeBalanceContract.getReceiverAddress().toByteArray();
+          if (!ArrayUtils.isEmpty(receiverAddress) && dynamicStore.supportDR()) {
+            throw new ContractValidateException(
+                "Do not allow delegate VOTE");
+          }
+          break;
+        } else {
+          throw new ContractValidateException(
+              "ResourceCode error,valid ResourceCode[BANDWIDTH、ENERGY]");
+        }
       default:
-        throw new ContractValidateException(
-            "ResourceCode error,valid ResourceCode[BANDWIDTH、ENERGY]");
+        if (dynamicStore.supportFreezeForVote()) {
+          throw new ContractValidateException(
+              "ResourceCode error,valid ResourceCode[BANDWIDTH、ENERGY、VOTE]");
+        } else {
+          throw new ContractValidateException(
+              "ResourceCode error,valid ResourceCode[BANDWIDTH、ENERGY]");
+        }
     }
 
     //todo：need version control and config for delegating resource

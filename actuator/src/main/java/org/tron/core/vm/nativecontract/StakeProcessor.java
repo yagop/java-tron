@@ -28,13 +28,19 @@ public class StakeProcessor {
       throws ContractValidateException, ContractExeException {
     selfValidate(stakeParam, repository);
     AccountCapsule accountCapsule = repository.getAccount(stakeParam.getOwnerAddress());
-    long tronPower = accountCapsule.getTronPower();
+    long tronPower = 0L;
+    if (repository.getDynamicPropertiesStore().supportFreezeForVote()) {
+      tronPower = accountCapsule.getTronPower2();
+    } else {
+      tronPower = accountCapsule.getTronPower();
+    }
     long freezeBalance = stakeParam.getStakeAmount() - tronPower;
     // if need freeze balance
     if (freezeBalance > 0) {
       long frozenDuration = repository.getDynamicPropertiesStore().getMinFrozenTime();
       validateFreeze(stakeParam.getOwnerAddress(), frozenDuration, freezeBalance, repository);
-      executeFreeze(stakeParam.getOwnerAddress(), frozenDuration, freezeBalance, stakeParam.getNow(), repository);
+      executeFreeze(stakeParam.getOwnerAddress(), frozenDuration, freezeBalance,
+          stakeParam.getNow(), repository);
     } else {
       logger.info("no need to freeze for stake");
     }
@@ -64,12 +70,12 @@ public class StakeProcessor {
     if (accountCapsule == null) {
       String readableOwnerAddress = StringUtil.createReadableString(ownerAddress);
       throw new ContractValidateException(
-              ACCOUNT_EXCEPTION_STR + readableOwnerAddress + NOT_EXIST_STR);
+          ACCOUNT_EXCEPTION_STR + readableOwnerAddress + NOT_EXIST_STR);
     }
   }
 
   private void validateFreeze(byte[] ownerAddress, long frozenDuration,
-                              long frozenBalance, Repository repository)
+      long frozenBalance, Repository repository)
       throws ContractValidateException {
     AccountCapsule accountCapsule = repository.getAccount(ownerAddress);
 
@@ -117,7 +123,13 @@ public class StakeProcessor {
         }
         sum = vote.getVoteCount();
       }
-      long tronPower = accountCapsule.getTronPower();
+
+      long tronPower = 0L;
+      if (repository.getDynamicPropertiesStore().supportFreezeForVote()) {
+        tronPower = accountCapsule.getTronPower2();
+      } else {
+        tronPower = accountCapsule.getTronPower();
+      }
 
       // trx -> drop. The vote count is based on TRX
       sum = LongMath.checkedMultiply(sum, ChainConstant.TRX_PRECISION);
@@ -133,7 +145,7 @@ public class StakeProcessor {
   }
 
   private void executeFreeze(byte[] ownerAddress, long frozenDuration,
-                             long frozenBalance, long now, Repository repository)
+      long frozenBalance, long now, Repository repository)
       throws ContractExeException {
     AccountCapsule accountCapsule = repository.getAccount(ownerAddress);
 
@@ -149,7 +161,7 @@ public class StakeProcessor {
     accountCapsule.setBalance(newBalance);
     repository.updateAccount(accountCapsule.createDbKey(), accountCapsule);
     repository
-            .addTotalNetWeight(frozenBalance / ChainConstant.TRX_PRECISION);
+        .addTotalNetWeight(frozenBalance / ChainConstant.TRX_PRECISION);
   }
 
   private void executeVote(byte[] ownerAddress, Protocol.Vote vote, Repository repository)

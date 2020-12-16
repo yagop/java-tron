@@ -469,6 +469,11 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
     return tp;
   }
 
+  //todo，used to replace getTronPower()
+  public long getTronPower2() {
+    return account.getAccountResource().getFrozenBalanceForVote().getFrozenBalance();
+  }
+
   /**
    * asset balance enough
    */
@@ -826,6 +831,20 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
 
     AccountResource newAccountResource = getAccountResource().toBuilder()
         .setFrozenBalanceForEnergy(newFrozenForEnergy).build();
+
+    this.account = this.account.toBuilder()
+        .setAccountResource(newAccountResource)
+        .build();
+  }
+
+  public void setFrozenForVote(long newFrozenBalanceForVote, long time) {
+    Frozen newFrozen = Frozen.newBuilder()
+        .setFrozenBalance(newFrozenBalanceForVote)
+        .setExpireTime(time)
+        .build();
+
+    AccountResource newAccountResource = getAccountResource().toBuilder()
+        .setFrozenBalanceForVote(newFrozen).build();
 
     this.account = this.account.toBuilder()
         .setAccountResource(newAccountResource)

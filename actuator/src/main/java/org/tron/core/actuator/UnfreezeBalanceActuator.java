@@ -197,6 +197,22 @@ public class UnfreezeBalanceActuator extends AbstractActuator {
               .setAccountResource(newAccountResource).build());
 
           break;
+
+        case VOTE:
+          if (dynamicStore.supportFreezeForVote()) {
+            unfreezeBalance = accountCapsule.getAccountResource().getFrozenBalanceForVote()
+                .getFrozenBalance();
+
+            AccountResource newAccountResource2 = accountCapsule.getAccountResource().toBuilder()
+                .clearFrozenBalanceForVote().build();
+            accountCapsule.setInstance(accountCapsule.getInstance().toBuilder()
+                .setBalance(oldBalance + unfreezeBalance)
+                .setAccountResource(newAccountResource2).build());
+          } else {
+            //this should never happen
+          }
+          break;
+
         default:
           //this should never happen
           break;
@@ -213,24 +229,63 @@ public class UnfreezeBalanceActuator extends AbstractActuator {
         dynamicStore
             .addTotalEnergyWeight(-unfreezeBalance / TRX_PRECISION);
         break;
+
+      case VOTE:
+        if (dynamicStore.supportFreezeForVote()) {
+          dynamicStore
+              .addTotalVoteWeight(-unfreezeBalance / TRX_PRECISION);
+        } else {
+          //this should never happen
+        }
+        break;
+
       default:
         //this should never happen
         break;
     }
 
-    VotesCapsule votesCapsule;
-    if (!votesStore.has(ownerAddress)) {
-      votesCapsule = new VotesCapsule(unfreezeBalanceContract.getOwnerAddress(),
-          accountCapsule.getVotesList());
+    boolean needToClearVote = false;
+    if (dynamicStore.supportFreezeForVote()) {
+      switch (unfreezeBalanceContract.getResource()) {
+        case BANDWIDTH:
+        case ENERGY:
+          // Used to deal with compatibility issues
+          // if vote list > vote right, clear vote.
+          long sum = accountCapsule.getVotesList().stream().mapToLong(vote -> vote.getVoteCount())
+              .sum();
+          long frozenBalanceForVote = accountCapsule.getAccountResource().getFrozenBalanceForVote()
+              .getFrozenBalance();
+
+          if (sum > frozenBalanceForVote) {
+            needToClearVote = true;
+          }
+          break;
+        case VOTE:
+          needToClearVote = true;
+          break;
+        default:
+          //this should never happen
+          break;
+      }
     } else {
-      votesCapsule = votesStore.get(ownerAddress);
+      needToClearVote = true;
     }
-    accountCapsule.clearVotes();
-    votesCapsule.clearNewVotes();
 
-    accountStore.put(ownerAddress, accountCapsule);
+    if (needToClearVote) {
+      VotesCapsule votesCapsule;
+      if (!votesStore.has(ownerAddress)) {
+        votesCapsule = new VotesCapsule(unfreezeBalanceContract.getOwnerAddress(),
+            accountCapsule.getVotesList());
+      } else {
+        votesCapsule = votesStore.get(ownerAddress);
+      }
+      accountCapsule.clearVotes();
+      votesCapsule.clearNewVotes();
 
-    votesStore.put(ownerAddress, votesCapsule);
+      accountStore.put(ownerAddress, accountCapsule);
+
+      votesStore.put(ownerAddress, votesCapsule);
+    }
 
     ret.setUnfreezeAmount(unfreezeBalance);
     ret.setStatus(fee, code.SUCESS);
@@ -368,6 +423,8 @@ public class UnfreezeBalanceActuator extends AbstractActuator {
             throw new ContractValidateException("It's not time to unfreeze.");
           }
           break;
+        case VOTE:
+          throw new ContractValidateException("Do not allow undelegate VOTE");
         default:
           throw new ContractValidateException(
               "ResourceCode error.valid ResourceCode[BANDWIDTH、Energy]");
@@ -395,11 +452,30 @@ public class UnfreezeBalanceActuator extends AbstractActuator {
           if (frozenBalanceForEnergy.getExpireTime() > now) {
             throw new ContractValidateException("It's not time to unfreeze(Energy).");
           }
-
           break;
+        case VOTE:
+          if (dynamicStore.supportFreezeForVote()) {
+            Frozen frozenBalanceForVote = accountCapsule.getAccountResource()
+                .getFrozenBalanceForVote();
+            if (frozenBalanceForVote.getFrozenBalance() <= 0) {
+              throw new ContractValidateException("no frozenBalance(Vote)");
+            }
+            if (frozenBalanceForVote.getExpireTime() > now) {
+              throw new ContractValidateException("It's not time to unfreeze(Vote).");
+            }
+          } else {
+            throw new ContractValidateException(
+                "ResourceCode error.valid ResourceCode[BANDWIDTH、Energy]");
+          }
+
         default:
-          throw new ContractValidateException(
-              "ResourceCode error.valid ResourceCode[BANDWIDTH、Energy]");
+          if (dynamicStore.supportFreezeForVote()) {
+            throw new ContractValidateException(
+                "ResourceCode error,valid ResourceCode[BANDWIDTH、ENERGY、VOTE]");
+          } else {
+            throw new ContractValidateException(
+                "ResourceCode error,valid ResourceCode[BANDWIDTH、ENERGY]");
+          }
       }
 
     }
