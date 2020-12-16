@@ -238,6 +238,11 @@ public class ProposalService extends ProposalUtil {
           manager.getDynamicPropertiesStore().saveAllowTransactionFeePool(entry.getValue());
           break;
         }
+
+        case ALLOW_FREEZE_FOR_VOTE: {
+          manager.getDynamicPropertiesStore().saveAllowFreezeForVote(entry.getValue());
+          break;
+        }
         default:
           find = false;
           break;

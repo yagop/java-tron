@@ -423,6 +423,19 @@ public class ProposalUtil {
         break;
       }
 
+      case ALLOW_FREEZE_FOR_VOTE: {
+        //todo, change version
+        if (!forkController.pass(ForkBlockVersionEnum.VERSION_4_1_2)) {
+          throw new ContractValidateException(
+              "Bad chain parameter id [ALLOW_FREEZE_FOR_VOTE]");
+        }
+        if (value != 1 && value != 0) {
+          throw new ContractValidateException(
+              "This value[ALLOW_FREEZE_FOR_VOTE] is only allowed to be 1 or 0");
+        }
+        break;
+      }
+
 
       default:
         break;
@@ -475,7 +488,8 @@ public class ProposalUtil {
     MARKET_SELL_FEE(45), // 0 [0,10_000_000_000]
     MARKET_CANCEL_FEE(46), // 0 [0,10_000_000_000]
     MAX_FEE_LIMIT(47), // [0, 10_000_000_000]
-    ALLOW_TRANSACTION_FEE_POOL(48); // 0, 1
+    ALLOW_TRANSACTION_FEE_POOL(48), // 0, 1
+    ALLOW_FREEZE_FOR_VOTE(50); // 0, 1
 
     private long code;
 

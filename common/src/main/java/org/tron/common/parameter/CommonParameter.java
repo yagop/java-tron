@@ -221,6 +221,9 @@ public class CommonParameter {
   public long allowAdaptiveEnergy; //committee parameter
   @Getter
   @Setter
+  public long allowFreezeForVote; //committee parameter
+  @Getter
+  @Setter
   public long allowDelegateResource; //committee parameter
   @Getter
   @Setter

@@ -136,6 +136,7 @@ public class Args extends CommonParameter {
     PARAMETER.checkFrozenTime = 1;
     PARAMETER.allowCreationOfContracts = 0;
     PARAMETER.allowAdaptiveEnergy = 0;
+    PARAMETER.allowFreezeForVote = 0;
     PARAMETER.allowTvmTransferTrc10 = 0;
     PARAMETER.allowTvmConstantinople = 0;
     PARAMETER.allowDelegateResource = 0;
@@ -520,6 +521,11 @@ public class Args extends CommonParameter {
     PARAMETER.allowAdaptiveEnergy =
         config.hasPath(Constant.COMMITTEE_ALLOW_ADAPTIVE_ENERGY) ? config
             .getInt(Constant.COMMITTEE_ALLOW_ADAPTIVE_ENERGY) : 0;
+
+    PARAMETER.allowFreezeForVote =
+        config.hasPath(Constant.COMMITTEE_ALLOW_FREEZE_FOR_VOTE) ? config
+            .getInt(Constant.COMMITTEE_ALLOW_FREEZE_FOR_VOTE) : 0;
+
 
     PARAMETER.allowDelegateResource =
         config.hasPath(Constant.COMMITTEE_ALLOW_DELEGATE_RESOURCE) ? config

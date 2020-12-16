@@ -154,6 +154,8 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   private static final byte[] MAX_FEE_LIMIT = "MAX_FEE_LIMIT".getBytes();
 
+  private static final byte[] ALLOW_FREEZE_FOR_VOTE = "ALLOW_FREEZE_FOR_VOTE".getBytes();
+
   @Autowired
   private DynamicPropertiesStore(@Value("properties") String dbName) {
     super(dbName);
@@ -345,6 +347,13 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     } catch (IllegalArgumentException e) {
       this.saveAllowAdaptiveEnergy(CommonParameter.getInstance()
           .getAllowAdaptiveEnergy());
+    }
+
+    try {
+      this.getAllowFreezeForVote();
+    } catch (IllegalArgumentException e) {
+      this.saveAllowFreezeForVote(CommonParameter.getInstance()
+          .getAllowFreezeForVote());
     }
 
     try {
@@ -1557,6 +1566,21 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
             () -> new IllegalArgumentException("not found ALLOW_DELEGATE_RESOURCE"));
   }
 
+
+  public void saveAllowFreezeForVote(long value) {
+    this.put(ALLOW_FREEZE_FOR_VOTE,
+        new BytesCapsule(ByteArray.fromLong(value)));
+  }
+
+  public long getAllowFreezeForVote() {
+    return Optional.ofNullable(getUnchecked(ALLOW_FREEZE_FOR_VOTE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found ALLOW_FREEZE_FOR_VOTE"));
+  }
+
+
   public void saveAllowAdaptiveEnergy(long value) {
     this.put(ALLOW_ADAPTIVE_ENERGY,
         new BytesCapsule(ByteArray.fromLong(value)));
@@ -1668,7 +1692,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   }
 
   public boolean supportFreezeForVote() {
-    return true;
+    return getAllowFreezeForVote() == 1L;
   }
 
   public void saveAllowUpdateAccountName(long rate) {

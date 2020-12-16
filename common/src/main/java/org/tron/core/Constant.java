@@ -123,6 +123,8 @@ public class Constant {
 
   public static final String COMMITTEE_ALLOW_ADAPTIVE_ENERGY = "committee.allowAdaptiveEnergy";
 
+  public static final String COMMITTEE_ALLOW_FREEZE_FOR_VOTE = "committee.allowFreezeForVote";
+
   public static final String COMMITTEE_ALLOW_DELEGATE_RESOURCE = "committee.allowDelegateResource";
 
   public static final String COMMITTEE_ALLOW_SAME_TOKEN_NAME = "committee.allowSameTokenName";
