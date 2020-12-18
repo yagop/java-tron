@@ -132,11 +132,11 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
     }
 
     public void put(byte[] key, AccountCapsule item) {
-//        AccountBalanceCapsule accountBalanceCapsule = item.getAccountBalanceCapsule();
-//        if (null == accountBalanceCapsule) {
-//            accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(key), item.getType(), item.getOriginalBalance());
-//        }
-//        put(key, accountBalanceCapsule);
+        AccountBalanceCapsule accountBalanceCapsule = item.getAccountBalanceCapsule();
+        if (null == accountBalanceCapsule) {
+            accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(key), item.getType(), item.getOriginalBalance());
+        }
+        put(key, accountBalanceCapsule);
     }
 
     /**

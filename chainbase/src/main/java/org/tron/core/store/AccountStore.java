@@ -55,6 +55,7 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
   public void put(byte[] key, AccountCapsule item) {
     super.put(key, item);
     accountStateCallBackUtils.accountCallBack(key, item);
+    accountBalanceStore.put(key, item);
   }
 
   /**
