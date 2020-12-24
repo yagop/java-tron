@@ -74,24 +74,24 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
 
 
     public void convertToAccountBalance() {
-        long start = System.currentTimeMillis();
-        logger.info("import balance of account store to account balance store ");
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-
-        AccountRecordQueue accountRecordQueue = new AccountRecordQueue(BlockQueueFactory.getInstance(), countDownLatch);
-        accountRecordQueue.fetchAccount(accountStore.getRevokingDB());
-
-        AccountConvertQueue accountConvertQueue = new AccountConvertQueue(BlockQueueFactory.getInstance(), accountStore, this);
-        accountConvertQueue.convert();
-        try {
-            Timer timer = countDown();
-            logger.debug("import balance await");
-            countDownLatch.await();
-            timer.cancel();
-        } catch (InterruptedException e) {
-            logger.info("import balance exception");
-        }
-        logger.info("import balance time: {}", (System.currentTimeMillis() - start) / 1000);
+//        long start = System.currentTimeMillis();
+//        logger.info("import balance of account store to account balance store ");
+//        CountDownLatch countDownLatch = new CountDownLatch(1);
+//
+//        AccountRecordQueue accountRecordQueue = new AccountRecordQueue(BlockQueueFactory.getInstance(), countDownLatch);
+//        accountRecordQueue.fetchAccount(accountStore.getRevokingDB());
+//
+//        AccountConvertQueue accountConvertQueue = new AccountConvertQueue(BlockQueueFactory.getInstance(), accountStore, this);
+//        accountConvertQueue.convert();
+//        try {
+//            Timer timer = countDown();
+//            logger.debug("import balance await");
+//            countDownLatch.await();
+//            timer.cancel();
+//        } catch (InterruptedException e) {
+//            logger.info("import balance exception");
+//        }
+//        logger.info("import balance time: {}", (System.currentTimeMillis() - start) / 1000);
     }
 
 
@@ -132,10 +132,7 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
     }
 
     public void put(byte[] key, AccountCapsule item) {
-        AccountBalanceCapsule accountBalanceCapsule = item.getAccountBalanceCapsule();
-        if (null == accountBalanceCapsule) {
-            accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(key), item.getType(), item.getOriginalBalance());
-        }
+        AccountBalanceCapsule accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(key), item.getType(), item.getInstance().getBalance());
         put(key, accountBalanceCapsule);
     }
 
@@ -179,14 +176,12 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
                     try {
                         while (true) {
                             Map.Entry<byte[], byte[]> accountEntry = convertQueue.take();
-                            if (null != accountEntry) {
-                                AccountCapsule account = new AccountCapsule(accountEntry.getValue());
-                                byte[] addressByte = account.getAddress().toByteArray();
-                                accountBalanceStore.put(addressByte,  new AccountBalanceCapsule(
-                                        account.getAddress(),
-                                        account.getOriginalBalance(),
-                                        account.getType()));
-                            }
+                            AccountCapsule account = new AccountCapsule(accountEntry.getValue());
+                            byte[] addressByte = account.getAddress().toByteArray();
+                            accountBalanceStore.put(addressByte, new AccountBalanceCapsule(
+                                    account.getAddress(),
+                                    account.getOriginalBalance(),
+                                    account.getType()));
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();

@@ -26,6 +26,8 @@ public interface Repository {
 
   AccountCapsule getAccount(byte[] address);
 
+  AccountBalanceCapsule getAccountBalance(byte[] address);
+
     BytesCapsule getDynamic(byte[] bytesKey);
 
   VotesCapsule getVotesCapsule(byte[] address);
@@ -129,4 +131,6 @@ public interface Repository {
   void saveTotalNetWeight(long totalNetWeight);
 
   long getTotalNetWeight();
+
+  void putAccountBalance(Key key, Value value);
 }

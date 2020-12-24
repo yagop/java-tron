@@ -85,6 +85,11 @@ public class ContractState implements Repository, ProgramListenerAware {
     return repository.getAccount(addr);
   }
 
+  @Override
+  public AccountBalanceCapsule getAccountBalance(byte[] address) {
+    return repository.getAccountBalance(address);
+  }
+
   public BytesCapsule getDynamic(byte[] bytesKey) {
     return repository.getDynamic(bytesKey);
   }
@@ -174,6 +179,11 @@ public class ContractState implements Repository, ProgramListenerAware {
   @Override
   public void putAccount(Key key, Value value) {
     repository.putAccount(key, value);
+  }
+
+  @Override
+  public void putAccountBalance(Key key, Value value) {
+    repository.putAccountBalance(key, value);
   }
 
   @Override

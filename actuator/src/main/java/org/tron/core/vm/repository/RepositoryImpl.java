@@ -74,6 +74,7 @@ public class RepositoryImpl implements Repository {
   private Repository parent = null;
 
   private HashMap<Key, Value> accountCache = new HashMap<>();
+  private HashMap<Key, Value> accountBalanceCache = new HashMap<>();
   private HashMap<Key, Value> codeCache = new HashMap<>();
   private HashMap<Key, Value> contractCache = new HashMap<>();
   private HashMap<Key, Value> dynamicPropertiesCache = new HashMap<>();
@@ -162,6 +163,13 @@ public class RepositoryImpl implements Repository {
     return account;
   }
 
+  public AccountBalanceCapsule createAccountBalance(byte[] address, Protocol.AccountType type) {
+    Key key = new Key(address);
+    AccountBalanceCapsule account = new AccountBalanceCapsule(ByteString.copyFrom(address), type);
+    accountBalanceCache.put(key, new Value(account.getData(), Type.VALUE_TYPE_CREATE));
+    return account;
+  }
+
   @Override
   public AccountCapsule createAccount(byte[] address, String accountName,
       Protocol.AccountType type) {
@@ -171,6 +179,12 @@ public class RepositoryImpl implements Repository {
         type);
 
     accountCache.put(key, new Value(account.getData(), Type.VALUE_TYPE_CREATE));
+
+
+    AccountBalanceCapsule accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(address),
+            ByteString.copyFromUtf8(accountName),
+            type);
+    accountBalanceCache.put(key, new Value(accountBalanceCapsule.getData(), Type.VALUE_TYPE_CREATE));
     return account;
   }
 
@@ -179,19 +193,42 @@ public class RepositoryImpl implements Repository {
     Key key = new Key(address);
     if (accountCache.containsKey(key)) {
       AccountCapsule account = accountCache.get(key).getAccount();
-      account.setAccountBalanceStore(accountBalanceStore);
+      Value value = accountBalanceCache.get(key);
+      account.setAccountBalanceCapsule(value.getAccountBalance());
       return account;
     }
+
     AccountCapsule accountCapsule;
+    AccountBalanceCapsule accountBalanceCapsule;
     if (parent != null) {
       accountCapsule = parent.getAccount(address);
+      accountBalanceCapsule = parent.getAccountBalance(address);
     } else {
       accountCapsule = getAccountStore().get(address);
+      accountBalanceCapsule = accountBalanceStore.get(address);
     }
 
     if (accountCapsule != null) {
       accountCache.put(key, Value.create(accountCapsule.getData()));
-      accountCapsule.setAccountBalanceStore(accountBalanceStore);
+      accountBalanceCache.put(key, Value.create(accountBalanceCapsule.getData()));
+    }
+    return accountCapsule;
+  }
+
+  public AccountBalanceCapsule getAccountBalance(byte[] address) {
+    Key key = new Key(address);
+    if (accountBalanceCache.containsKey(key)) {
+      return accountBalanceCache.get(key).getAccountBalance();
+    }
+    AccountBalanceCapsule accountCapsule;
+    if (parent != null) {
+      accountCapsule = parent.getAccountBalance(address);
+    } else {
+      accountCapsule = accountBalanceStore.get(address);
+    }
+
+    if (accountCapsule != null) {
+      accountBalanceCache.put(key, Value.create(new AccountBalanceCapsule(ByteString.copyFrom(address), accountCapsule.getType()).getData()));
     }
     return accountCapsule;
   }
@@ -337,6 +374,9 @@ public class RepositoryImpl implements Repository {
     Key key = Key.create(address);
     Value value = Value.create(accountCapsule.getData(), Type.VALUE_TYPE_DIRTY);
     accountCache.put(key, value);
+
+    Value value2 = Value.create(new AccountBalanceCapsule(accountCapsule.getAddress(), accountCapsule.getType(), accountCapsule.getBalance()).getData(), Type.VALUE_TYPE_DIRTY);
+    accountBalanceCache.put(key, value2);
   }
 
   @Override
@@ -498,8 +538,10 @@ public class RepositoryImpl implements Repository {
   @Override
   public long addBalance(byte[] address, long value) {
     AccountCapsule accountCapsule = getAccount(address);
+    AccountBalanceCapsule accountBalanceCapsule = getAccountBalance(address);
     if (accountCapsule == null) {
       accountCapsule = createAccount(address, Protocol.AccountType.Normal);
+      accountBalanceCapsule = createAccountBalance(address, Protocol.AccountType.Normal);
     }
 
     long balance = accountCapsule.getBalance();
@@ -513,11 +555,17 @@ public class RepositoryImpl implements Repository {
               + " insufficient balance");
     }
     accountCapsule.setBalance(Math.addExact(balance, value));
+    accountBalanceCapsule.setBalance(Math.addExact(balance, value));
+
     Key key = Key.create(address);
     Value val = Value.create(accountCapsule.getData(),
         Type.VALUE_TYPE_DIRTY | accountCache.get(key).getType().getType());
     accountCache.put(key, val);
-    return accountCapsule.getBalance();
+
+    Value val2 = Value.create(accountBalanceCapsule.getData(),
+            Type.VALUE_TYPE_DIRTY | accountBalanceCache.get(key).getType().getType());
+    accountBalanceCache.put(key, val2);
+    return accountBalanceCapsule.getBalance();
   }
 
   @Override
@@ -547,6 +595,11 @@ public class RepositoryImpl implements Repository {
   }
 
   @Override
+  public void putAccountBalance(Key key, Value value) {
+    accountBalanceCache.put(key, value);
+  }
+
+  @Override
   public void putCode(Key key, Value value) {
     codeCache.put(key, value);
   }
@@ -565,6 +618,7 @@ public class RepositoryImpl implements Repository {
   public void putAccountValue(byte[] address, AccountCapsule accountCapsule) {
     Key key = new Key(address);
     accountCache.put(key, new Value(accountCapsule.getData(), Type.VALUE_TYPE_CREATE));
+    accountBalanceCache.put(key, new Value(new AccountBalanceCapsule(accountCapsule.getAddress(), accountCapsule.getType()).getData(), Type.VALUE_TYPE_CREATE));
   }
 
   @Override
@@ -625,6 +679,9 @@ public class RepositoryImpl implements Repository {
     Value V = Value.create(accountCapsule.getData(),
         Type.VALUE_TYPE_DIRTY | accountCache.get(key).getType().getType());
     accountCache.put(key, V);
+
+    Value V2 = Value.create(new AccountBalanceCapsule(accountCapsule.getAddress(), accountCapsule.getType()).getData());
+    accountBalanceCache.put(key, V2);
     return accountCapsule.getAssetMapV2().get(new String(tokenIdWithoutLeadingZero));
   }
 
@@ -718,6 +775,17 @@ public class RepositoryImpl implements Repository {
         }
       }
     });
+
+    accountBalanceCache.forEach((key, value) -> {
+      if (value.getType().isCreate() || value.getType().isDirty()) {
+        if (deposit != null) {
+          deposit.putAccountBalance(key, value);
+        } else {
+          accountBalanceStore.put(key.getData(), value.getAccountBalance());
+        }
+      }
+    });
+
   }
 
   private void commitCodeCache(Repository deposit) {
@@ -826,6 +894,10 @@ public class RepositoryImpl implements Repository {
         getDynamicPropertiesStore());
 
     accountCache.put(key, new Value(account.getData(), Type.VALUE_TYPE_CREATE));
+
+
+    AccountBalanceCapsule accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(address), AccountType.Normal);
+    accountBalanceCache.put(key, new Value(accountBalanceCapsule.getData(), Type.VALUE_TYPE_CREATE));
     return account;
   }
 

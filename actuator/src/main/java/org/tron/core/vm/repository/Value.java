@@ -113,6 +113,13 @@ public class Value {
     return new AccountCapsule(any);
   }
 
+  public AccountBalanceCapsule getAccountBalance() {
+    if (ArrayUtils.isEmpty(any)) {
+      return null;
+    }
+    return new AccountBalanceCapsule(any);
+  }
+
   /**
    * @return
    */

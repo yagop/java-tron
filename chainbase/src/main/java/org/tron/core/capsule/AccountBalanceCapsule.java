@@ -4,6 +4,7 @@ package org.tron.core.capsule;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.AccountBalance;
 import org.tron.protos.Protocol.AccountType;
 
@@ -63,6 +64,20 @@ public class AccountBalanceCapsule implements ProtoCapsule<AccountBalance>, Comp
                 .build();
     }
 
+    public AccountBalanceCapsule(ByteString address, AccountType type) {
+        this.accountBalance = AccountBalance.newBuilder()
+                .setAddress(address)
+                .setType(type)
+                .build();
+    }
+
+    public AccountBalanceCapsule(ByteString address, ByteString accountName, AccountType type) {
+        this.accountBalance = Protocol.AccountBalance.newBuilder()
+                .setType(type)
+                .setAddress(address)
+                .build();
+    }
+
     @Override
     public int compareTo(AccountBalanceCapsule otherObject) {
         return Long.compare(otherObject.getBalance(), this.getBalance());
@@ -99,5 +114,7 @@ public class AccountBalanceCapsule implements ProtoCapsule<AccountBalance>, Comp
         return this.accountBalance.getType();
     }
 
-
+    public void setInstance(AccountBalance accountBalance) {
+        this.accountBalance = accountBalance;
+    }
 }

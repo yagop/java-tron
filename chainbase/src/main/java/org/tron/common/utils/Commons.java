@@ -61,6 +61,7 @@ public class Commons {
       throws BalanceInsufficientException {
     AccountCapsule account = accountStore.getUnchecked(accountAddress);
     account.setAccountBalanceStore(accountStore.getAccountBalanceStore());
+    account.setAccountBalanceCapsule(accountStore.getAccountBalanceStore().get(account.getAddress().toByteArray()));
     adjustBalance(accountStore, account, amount);
   }
 
@@ -79,29 +80,30 @@ public class Commons {
       throw new BalanceInsufficientException(
           StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
     }
-    account.setBalance(Math.addExact(balance, amount));
+    long exactBalance = Math.addExact(balance, amount);
+    account.setBalance(exactBalance);
     accountStore.put(account.getAddress().toByteArray(), account);
   }
 
-
-  /**
-   * judge balance by AccountBalance
-   */
-  public static void adjustBalance(AccountBalanceStore accountBalanceStore, byte[] accountAddress, long amount)
-          throws BalanceInsufficientException {
-    AccountBalanceCapsule accountBalanceCapsule = accountBalanceStore.getUnchecked(accountAddress);
-    long balance = accountBalanceCapsule.getBalance();
-    if (amount == 0) {
-      return;
-    }
-
-    if (amount < 0 && balance < -amount) {
-      throw new BalanceInsufficientException(
-              StringUtil.createReadableString(accountBalanceCapsule.createDbKey()) + " insufficient balance");
-    }
-    accountBalanceCapsule.setBalance(Math.addExact(balance, amount));
-    accountBalanceStore.put(accountBalanceCapsule.getAddress().toByteArray(), accountBalanceCapsule);
-  }
+//
+//  /**
+//   * judge balance by AccountBalance
+//   */
+//  public static void adjustBalance(AccountBalanceStore accountBalanceStore, byte[] accountAddress, long amount)
+//          throws BalanceInsufficientException {
+//    AccountBalanceCapsule accountBalanceCapsule = accountBalanceStore.getUnchecked(accountAddress);
+//    long balance = accountBalanceCapsule.getBalance();
+//    if (amount == 0) {
+//      return;
+//    }
+//
+//    if (amount < 0 && balance < -amount) {
+//      throw new BalanceInsufficientException(
+//              StringUtil.createReadableString(accountBalanceCapsule.createDbKey()) + " insufficient balance");
+//    }
+//    accountBalanceCapsule.setBalance(Math.addExact(balance, amount));
+//    accountBalanceStore.put(accountBalanceCapsule.getAddress().toByteArray(), accountBalanceCapsule);
+//  }
 
   public static ExchangeStore getExchangeStoreFinal(DynamicPropertiesStore dynamicPropertiesStore,
       ExchangeStore exchangeStore,
