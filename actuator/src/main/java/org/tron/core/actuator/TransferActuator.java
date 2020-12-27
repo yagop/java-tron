@@ -45,7 +45,7 @@ public class TransferActuator extends AbstractActuator {
       byte[] ownerAddress = transferContract.getOwnerAddress().toByteArray();
 
       // if account with to_address does not exist, create it first.
-      AccountCapsule toAccount = accountStore.get(toAddress);
+      AccountCapsule toAccount = accountStore.getBalance(toAddress);
       if (toAccount == null) {
         boolean withDefaultPermission =
             dynamicStore.getAllowMultiSign() == 1;
@@ -107,7 +107,7 @@ public class TransferActuator extends AbstractActuator {
       throw new ContractValidateException("Cannot transfer TRX to yourself.");
     }
 
-    AccountCapsule ownerAccount = accountStore.get(ownerAddress);
+    AccountCapsule ownerAccount = accountStore.getBalance(ownerAddress);
 
     if (ownerAccount == null) {
       throw new ContractValidateException("Validate TransferContract error, no OwnerAccount.");
@@ -120,7 +120,7 @@ public class TransferActuator extends AbstractActuator {
     }
 
     try {
-      AccountCapsule toAccount = accountStore.get(toAddress);
+      AccountCapsule toAccount = accountStore.getBalance(toAddress);
       if (toAccount == null) {
         fee = fee + dynamicStore.getCreateNewAccountFeeInSystemContract();
       }

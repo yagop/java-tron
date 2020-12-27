@@ -29,6 +29,7 @@ import org.tron.common.utils.ByteArray;
 import org.tron.core.store.AccountBalanceStore;
 import org.tron.core.store.AssetIssueStore;
 import org.tron.core.store.DynamicPropertiesStore;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.Account;
 import org.tron.protos.Protocol.Account.AccountResource;
 import org.tron.protos.Protocol.Account.Builder;
@@ -50,6 +51,7 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
   @Setter
   private AccountBalanceCapsule accountBalanceCapsule;
 
+  @Setter
   private AccountBalanceStore accountBalanceStore;
 
   /**
@@ -159,6 +161,8 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
             .build();
   }
 
+
+
   /**
    * get account from address.
    */
@@ -191,6 +195,13 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
    */
   public AccountCapsule(Account account) {
     this.account = account;
+  }
+
+  public AccountCapsule(AccountBalanceStore accountBalanceStore, byte[] key) {
+    this.accountBalanceStore = accountBalanceStore;
+    if (accountBalanceCapsule == null) {
+      this.accountBalanceCapsule = accountBalanceStore.get(key);
+    }
   }
 
   private static ByteString getActiveDefaultOperations(
@@ -268,6 +279,7 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
 
   public void setInstance(Account account) {
     this.account = account;
+    setInstanceBalance(this.accountBalanceCapsule, account.getBalance());
   }
 
   public ByteString getAddress() {
@@ -331,8 +343,7 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
   }
 
   public long getBalance() {
-    account.getBalance();
-    return account.getBalance();
+    return accountBalanceCapsule.getBalance();
   }
 
   public void setBalance(long balance) {
@@ -1038,15 +1049,9 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
   }
 
   public void setInstanceBalance(AccountBalanceCapsule accountBalanceCapsule, long balance) {
-//    Protocol.AccountBalance accountBalance = accountBalanceCapsule.getInstance()
-//            .toBuilder()
-//            .setBalance(balance)
-//            .build();
-//    accountBalanceCapsule.setInstance(accountBalance);
-//    this.accountBalanceCapsule = accountBalanceCapsule;
-  }
-
-  public void setAccountBalanceStore(AccountBalanceStore accountBalanceStore) {
-    this.accountBalanceStore = accountBalanceStore;
+    this.accountBalanceCapsule.setInstance(accountBalanceCapsule.getInstance()
+            .toBuilder()
+            .setBalance(balance)
+            .build());
   }
 }

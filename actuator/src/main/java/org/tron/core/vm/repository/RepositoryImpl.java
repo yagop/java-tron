@@ -180,7 +180,6 @@ public class RepositoryImpl implements Repository {
 
     accountCache.put(key, new Value(account.getData(), Type.VALUE_TYPE_CREATE));
 
-
     AccountBalanceCapsule accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(address),
             ByteString.copyFromUtf8(accountName),
             type);
@@ -211,6 +210,7 @@ public class RepositoryImpl implements Repository {
     if (accountCapsule != null) {
       accountCache.put(key, Value.create(accountCapsule.getData()));
       accountBalanceCache.put(key, Value.create(accountBalanceCapsule.getData()));
+      accountCapsule.setAccountBalanceCapsule(accountBalanceCapsule);
     }
     return accountCapsule;
   }
@@ -680,7 +680,11 @@ public class RepositoryImpl implements Repository {
         Type.VALUE_TYPE_DIRTY | accountCache.get(key).getType().getType());
     accountCache.put(key, V);
 
-    Value V2 = Value.create(new AccountBalanceCapsule(accountCapsule.getAddress(), accountCapsule.getType()).getData());
+//    Value V2 = Value.create(new AccountBalanceCapsule(accountCapsule.getAddress(), accountCapsule.getType()).getData());
+    Value V2 = Value.create(
+            accountCapsule.getAccountBalanceCapsule().getData(),
+            Type.VALUE_TYPE_DIRTY | accountCache.get(key).getType().getType()
+    );
     accountBalanceCache.put(key, V2);
     return accountCapsule.getAssetMapV2().get(new String(tokenIdWithoutLeadingZero));
   }

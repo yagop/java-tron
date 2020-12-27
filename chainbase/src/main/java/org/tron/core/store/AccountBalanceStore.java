@@ -47,33 +47,31 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
     }
 
     //插入一个空账户，用于启动判断是否结束
-//    public void convertToAccountBalance() {
-//        logger.info("Check if synchronization is required: {}", dynamicPropertiesStore.getAccountBalanceConvert());
-//
-//        long start = System.currentTimeMillis();
-//        Timer timer = countDown();
-//        int count = 0;
-//        for (Map.Entry<byte[], byte[]> entry : accountStore.getRevokingDB()) {
-//            AccountCapsule accountCapsule = new AccountCapsule(entry.getValue());
-//            this.put(entry.getKey(), new AccountBalanceCapsule(
-//                    accountCapsule.getAddress(),
-//                    accountCapsule.getOriginalBalance(),
-//                    accountCapsule.getType()));
-//            count++;
-//        }
-//
-//        logger.info("import balance time: {}, count{}", (System.currentTimeMillis() - start) / 1000, count);
-//        dynamicPropertiesStore.setAccountBalanceConvert(1);
-//        timer.cancel();
-//        if (dynamicPropertiesStore.getAccountBalanceConvert() == 0) {
-//
-//        } else {
-//            logger.info("No synchronization required");
-//        }
-//    }
-
-
     public void convertToAccountBalance() {
+        logger.info("Check if synchronization is required: {}", dynamicPropertiesStore.getAccountBalanceConvert());
+        if (dynamicPropertiesStore.getAccountBalanceConvert() == 0) {
+            long start = System.currentTimeMillis();
+            Timer timer = countDown();
+            int count = 0;
+            for (Map.Entry<byte[], byte[]> entry : accountStore.getRevokingDB()) {
+                AccountCapsule accountCapsule = new AccountCapsule(entry.getValue());
+                this.put(entry.getKey(), new AccountBalanceCapsule(
+                        accountCapsule.getAddress(),
+                        accountCapsule.getOriginalBalance(),
+                        accountCapsule.getType()));
+                count++;
+            }
+
+            logger.info("import balance time: {}, count{}", (System.currentTimeMillis() - start) / 1000, count);
+            dynamicPropertiesStore.setAccountBalanceConvert(1);
+            timer.cancel();
+        } else {
+            logger.info("No synchronization required");
+        }
+    }
+
+
+//    public void convertToAccountBalance() {
 //        long start = System.currentTimeMillis();
 //        logger.info("import balance of account store to account balance store ");
 //        CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -92,7 +90,7 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
 //            logger.info("import balance exception");
 //        }
 //        logger.info("import balance time: {}", (System.currentTimeMillis() - start) / 1000);
-    }
+//    }
 
 
     public Timer countDown() {
