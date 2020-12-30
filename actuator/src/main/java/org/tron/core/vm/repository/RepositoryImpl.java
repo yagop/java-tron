@@ -554,8 +554,9 @@ public class RepositoryImpl implements Repository {
           StringUtil.createReadableString(accountCapsule.createDbKey())
               + " insufficient balance");
     }
-    accountCapsule.setBalance(Math.addExact(balance, value));
-    accountBalanceCapsule.setBalance(Math.addExact(balance, value));
+    long addBalance = Math.addExact(balance, value);
+    accountCapsule.setBalance(addBalance);
+    accountBalanceCapsule.setBalance(addBalance);
 
     Key key = Key.create(address);
     Value val = Value.create(accountCapsule.getData(),
@@ -580,6 +581,7 @@ public class RepositoryImpl implements Repository {
       repository = parent;
     }
     commitAccountCache(repository);
+    commitAccountBalanceCache(repository);
     commitCodeCache(repository);
     commitContractCache(repository);
     commitStorageCache(repository);
@@ -779,7 +781,9 @@ public class RepositoryImpl implements Repository {
         }
       }
     });
+  }
 
+  private void commitAccountBalanceCache(Repository deposit) {
     accountBalanceCache.forEach((key, value) -> {
       if (value.getType().isCreate() || value.getType().isDirty()) {
         if (deposit != null) {
@@ -789,7 +793,6 @@ public class RepositoryImpl implements Repository {
         }
       }
     });
-
   }
 
   private void commitCodeCache(Repository deposit) {

@@ -60,7 +60,6 @@ public class Commons {
   public static void adjustBalance(AccountStore accountStore, byte[] accountAddress, long amount)
       throws BalanceInsufficientException {
     AccountCapsule account = accountStore.getUnchecked(accountAddress);
-
     adjustBalance(accountStore, account, amount);
   }
 
@@ -69,20 +68,20 @@ public class Commons {
    */
   public static void adjustBalance(AccountStore accountStore, AccountCapsule account, long amount)
       throws BalanceInsufficientException {
-    account.setAccountBalanceStore(accountStore.getAccountBalanceStore());
-    account.setAccountBalanceCapsule(accountStore.getAccountBalanceStore().get(account.getAddress().toByteArray()));
-    long balance = account.getBalance();
     if (amount == 0) {
       return;
     }
-
+    byte[] address = account.getAddress().toByteArray();
+    account.setAccountBalanceStore(accountStore.getAccountBalanceStore());
+    account.setAccountBalanceCapsule(accountStore.getAccountBalanceStore().get(address));
+    long balance = account.getBalance();
     if (amount < 0 && balance < -amount) {
       throw new BalanceInsufficientException(
           StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
     }
     long exactBalance = Math.addExact(balance, amount);
     account.setBalance(exactBalance);
-    accountStore.put(account.getAddress().toByteArray(), account);
+    accountStore.put(address, account);
   }
 
   public static ExchangeStore getExchangeStoreFinal(DynamicPropertiesStore dynamicPropertiesStore,
