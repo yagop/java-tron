@@ -1,10 +1,12 @@
 package org.tron.common.logsfilter.nativequeue;
 
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+@Slf4j
 public class NativeMessageQueue {
 
   private static final int DEFAULT_BIND_PORT = 5555;
@@ -58,10 +60,14 @@ public class NativeMessageQueue {
 
   public void publishTrigger(String data, String topic) {
     if (Objects.isNull(publisher) || Objects.isNull(context.isClosed()) || context.isClosed()) {
+      logger.error("***** can not send event  data: " + data + "topic: " + topic);
       return;
     }
-
-    publisher.sendMore(topic);
-    publisher.send(data);
+    if (publisher.sendMore(topic)) {
+      logger.error("***** send topic error   topic: " + topic);
+    }
+    if (publisher.send(data)) {
+      logger.error("***** send data error   data: " + topic);
+    }
   }
 }
