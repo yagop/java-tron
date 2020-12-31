@@ -122,7 +122,7 @@ public class EventQuery004 {
             "depositForLog()", "#", false,
             1L, 100000000L, event001Address, event001Key, blockingStubFull);
         logger.info(txid);
-        if (PublicMethed.getTransactionInfoById(txid,blockingStubFull).get()
+        if (PublicMethed.getTransactionInfoById(txid, blockingStubFull).get()
             .getResultValue() == 0) {
           sendTransaction = false;
         }
@@ -145,7 +145,8 @@ public class EventQuery004 {
   }
 
 
-  @Test(enabled = true, description = "Event query for solidity contract log")
+  @Test(enabled = true, description = "Event query for solidity contract log",
+          invocationCount = 5000)
   public void test02EventQueryForContractSolidityLog() {
     PublicMethed.waitSolidityNodeSynFullNodeData(blockingStubFull, blockingStubSolidity);
     ZMQ.Context context = ZMQ.context(1);
@@ -177,16 +178,11 @@ public class EventQuery004 {
       if (sendTransaction) {
         txid1 = PublicMethed.triggerContract(contractAddress,
             "depositForLog()", "#", false,
-            1L, 100000000L, event001Address, event001Key, blockingStubFull);
-        txid2 = PublicMethed.triggerContract(contractAddress,
-            "depositForLog()", "#", false,
-            1L, 100000000L, event001Address, event001Key, blockingStubFull);
-        txid3 = PublicMethed.triggerContract(contractAddress,
-            "depositForLog()", "#", false,
-            1L, 100000000L, event001Address, event001Key, blockingStubFull);
-        logger.info(txid);
-        if (PublicMethed.getTransactionInfoById(txid,blockingStubFull).get()
+            1L, 100000000L, fromAddress, testKey002, blockingStubFull);
+        logger.info(txid1);
+        if (PublicMethed.getTransactionInfoById(txid1, blockingStubFull).get()
             .getResultValue() == 0) {
+          logger.error("---solidityLogTrigger transaction failed");
           sendTransaction = false;
         }
 
@@ -207,8 +203,7 @@ public class EventQuery004 {
     Assert.assertTrue(blockObject.containsKey("timeStamp"));
     Assert.assertEquals(blockObject.getString("triggerName"), "solidityLogTrigger");
     txid = blockObject.getString("transactionId");
-
-    Assert.assertTrue(txid1.equals(txid) || txid2.equals(txid) || txid3.equals(txid));
+    Assert.assertTrue(txid1.equals(txid));
   }
 
 

@@ -5,11 +5,14 @@
     <listener class-name="stest.tron.wallet.common.client.utils.DailyBuildReport"></listener>
   </listeners>
   <test name="stest">
-    <packages>
+    <!--<packages>
       <package name="stest.tron.wallet.dailybuild.*">
         <exclude name="stest.tron.wallet.dailybuild.multisign"></exclude>
       </package>
-    </packages>
+    </packages>-->
+    <classes>
+      <class name="stest.tron.wallet.dailybuild.eventquery.EventQuery004"></class>
+    </classes>
 
   </test>
 </suite>
