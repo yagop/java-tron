@@ -63,10 +63,10 @@ public class NativeMessageQueue {
       logger.error("***** can not send event  data: " + data + "topic: " + topic);
       return;
     }
-    if (publisher.sendMore(topic)) {
+    if (!(publisher.sendMore(topic))) {
       logger.error("***** send topic error   topic: " + topic);
     }
-    if (publisher.send(data)) {
+    if (!(publisher.send(data))) {
       logger.error("***** send data error   data: " + topic);
     }
   }
