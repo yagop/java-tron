@@ -203,7 +203,7 @@ public class EventQuery004 {
       }
     }
     Assert.assertTrue(retryTimes > 0);
-    //logger.info("transaction message:" + transactionMessage);
+    logger.info("transaction message:" + transactionMessage);
     JSONObject blockObject = JSONObject.parseObject(transactionMessage);
     Assert.assertTrue(blockObject.containsKey("timeStamp"));
     Assert.assertEquals(blockObject.getString("triggerName"), "solidityLogTrigger");
