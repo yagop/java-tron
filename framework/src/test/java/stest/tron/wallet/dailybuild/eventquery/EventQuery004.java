@@ -49,6 +49,9 @@ public class EventQuery004 {
   private Long maxFeeLimit = Configuration.getByPath("testng.conf")
       .getLong("defaultParameter.maxFeeLimit");
 
+  ZMQ.Context context = ZMQ.context(1);
+  ZMQ.Socket req = context.socket(ZMQ.SUB);
+
   @BeforeSuite
   public void beforeSuite() {
     Wallet wallet = new Wallet();
@@ -94,8 +97,8 @@ public class EventQuery004 {
 
   @Test(enabled = true, description = "Event query for contract log")
   public void test01EventQueryForContractLog() {
-    ZMQ.Context context = ZMQ.context(1);
-    ZMQ.Socket req = context.socket(ZMQ.SUB);
+    //ZMQ.Context context = ZMQ.context(1);
+    //ZMQ.Socket req = context.socket(ZMQ.SUB);
 
     req.subscribe("contractLogTrigger");
     final ZMQ.Socket moniter = context.socket(ZMQ.PAIR);
@@ -142,6 +145,8 @@ public class EventQuery004 {
     Assert.assertEquals(blockObject.getString("triggerName"), "contractLogTrigger");
 
     Assert.assertEquals(blockObject.getString("transactionId"), txid);
+    req.unsubscribe("contractLogTrigger");
+    req.unsubscribe("contractLogTrigger");
   }
 
 
@@ -149,8 +154,8 @@ public class EventQuery004 {
           invocationCount = 5000)
   public void test02EventQueryForContractSolidityLog() {
     PublicMethed.waitSolidityNodeSynFullNodeData(blockingStubFull, blockingStubSolidity);
-    ZMQ.Context context = ZMQ.context(1);
-    ZMQ.Socket req = context.socket(ZMQ.SUB);
+    //ZMQ.Context context = ZMQ.context(1);
+    //ZMQ.Socket req = context.socket(ZMQ.SUB);
 
     req.subscribe("solidityLogTrigger");
     final ZMQ.Socket moniter = context.socket(ZMQ.PAIR);
@@ -182,7 +187,7 @@ public class EventQuery004 {
         logger.info(txid1);
         if (PublicMethed.getTransactionInfoById(txid1, blockingStubFull).get()
             .getResultValue() == 0) {
-          logger.error("---solidityLogTrigger transaction failed");
+          //logger.error("---solidityLogTrigger transaction failed");
           sendTransaction = false;
         }
 
@@ -198,7 +203,7 @@ public class EventQuery004 {
       }
     }
     Assert.assertTrue(retryTimes > 0);
-    logger.info("transaction message:" + transactionMessage);
+    //logger.info("transaction message:" + transactionMessage);
     JSONObject blockObject = JSONObject.parseObject(transactionMessage);
     Assert.assertTrue(blockObject.containsKey("timeStamp"));
     Assert.assertEquals(blockObject.getString("triggerName"), "solidityLogTrigger");
@@ -216,6 +221,8 @@ public class EventQuery004 {
     if (channelFull != null) {
       channelFull.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
+    req.disconnect(eventnode);
+    req.close();
   }
 }
 
