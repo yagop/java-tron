@@ -1,6 +1,5 @@
 package org.tron.core.store;
 
-import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.typesafe.config.ConfigObject;
 import lombok.extern.slf4j.Slf4j;
@@ -8,23 +7,16 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Commons;
 import org.tron.core.capsule.AccountBalanceCapsule;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
 import org.tron.core.db.accountstate.AccountStateCallBackUtils;
 import org.tron.core.db2.common.IRevokingDB;
-import org.tron.core.exception.BadItemException;
-import org.tron.core.exception.ItemNotFoundException;
-import org.tron.protos.Protocol.AccountType;
 
 import java.util.*;
-
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j(topic = "DB")
 @Component
@@ -70,29 +62,6 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
         }
     }
 
-
-//    public void convertToAccountBalance() {
-//        long start = System.currentTimeMillis();
-//        logger.info("import balance of account store to account balance store ");
-//        CountDownLatch countDownLatch = new CountDownLatch(1);
-//
-//        AccountRecordQueue accountRecordQueue = new AccountRecordQueue(BlockQueueFactory.getInstance(), countDownLatch);
-//        accountRecordQueue.fetchAccount(accountStore.getRevokingDB());
-//
-//        AccountConvertQueue accountConvertQueue = new AccountConvertQueue(BlockQueueFactory.getInstance(), accountStore, this);
-//        accountConvertQueue.convert();
-//        try {
-//            Timer timer = countDown();
-//            logger.debug("import balance await");
-//            countDownLatch.await();
-//            timer.cancel();
-//        } catch (InterruptedException e) {
-//            logger.info("import balance exception");
-//        }
-//        logger.info("import balance time: {}", (System.currentTimeMillis() - start) / 1000);
-//    }
-
-
     public Timer countDown() {
         Timer timer = new Timer();
         AtomicInteger count = new AtomicInteger();
@@ -124,15 +93,15 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
     }
 
     @Override
-    public void put(byte[] key, AccountBalanceCapsule item) {
-        super.put(key, item);
-        accountStateCallBackUtils.accountBalanceCallBack(key, item);
+    public void put(byte[] key, AccountBalanceCapsule accountBalanceCapsule) {
+        super.put(key, accountBalanceCapsule);
+        accountStateCallBackUtils.accountBalanceCallBack(key, accountBalanceCapsule);
     }
 
     public void put(byte[] key, AccountCapsule accountCapsule) {
         AccountBalanceCapsule accountBalanceCapsule = accountCapsule.getAccountBalanceCapsule();
         if (accountBalanceCapsule == null) {
-            accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(key), accountCapsule.getType(), accountCapsule.getInstance().getBalance());
+            accountBalanceCapsule = new AccountBalanceCapsule(ByteString.copyFrom(key), accountCapsule.getType(), accountCapsule.getOriginalBalance());
         }
         put(key, accountBalanceCapsule);
     }
@@ -239,42 +208,6 @@ public class AccountBalanceStore extends TronStoreWithRevoking<AccountBalanceCap
     public static class BlockQueueFactory {
 
         private static BlockingQueue queue;
-
-        //---1 producer---
-        //2 thread
-        // 100 267
-        // 300 249S
-        // 500 262s
-        // 1000 293
-
-        //4 thread
-        // 300  242
-        // 500  240 232M+
-        // 1000 267 237M+
-        // 1500 261
-        // 3000 273S 224.9% 243M-
-
-        //   225.9% 244M+ ArrayBlockingQueue
-
-        //6 thread
-        // 300 214
-        // 500  248s 229M+ 223%
-        // 1000  252S  227M+  213.1%
-        // 2000  261S  243M+ 223.0%
-
-        //8 thread
-        //300  295S 211.0%  234M+
-        //500  153S  258.5%   255M-
-        //1000 152S  243.0%   258M+
-        //3000 254S  258.4%  238M+
-        //5000
-
-
-        //10
-        // 500  223S    226.9%    247M+
-
-        //16
-        // 240S
 
         public static BlockingQueue getInstance() {
             if (null == queue) {
