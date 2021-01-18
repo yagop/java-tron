@@ -28,6 +28,7 @@ public class PendingManager implements AutoCloseable {
       db.getPendingTransactions().forEach(transactionCapsule -> {
         if (System.currentTimeMillis() - transactionCapsule.getTime() < timeout) {
           tmpTransactions.add(transactionCapsule);
+        } else {
           logger.warn("remove tx from pending, txId:{}", transactionCapsule.getTransactionId());
         }
       });
