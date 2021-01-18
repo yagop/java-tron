@@ -185,6 +185,7 @@ public class Args extends CommonParameter {
     PARAMETER.allowTvmStake = 0;
     PARAMETER.allowTvmAssetIssue = 0;
     PARAMETER.historyBalanceLookup = false;
+    PARAMETER.openRemoveSRPendingTx = false;
   }
 
   /**
@@ -744,6 +745,8 @@ public class Args extends CommonParameter {
     PARAMETER.historyBalanceLookup = config.hasPath(Constant.HISTORY_BALANCE_LOOKUP) && config
         .getBoolean(Constant.HISTORY_BALANCE_LOOKUP);
 
+    PARAMETER.openRemoveSRPendingTx = config.hasPath(Constant.OPEN_REMOVE_SR_PENDING_TX) ? config
+            .getBoolean(Constant.OPEN_REMOVE_SR_PENDING_TX) : false;
     logConfig();
   }
 
@@ -1102,7 +1105,7 @@ public class Args extends CommonParameter {
     }
     return this.outputDirectory;
   }
-  
+
   private static void witnessAddressCheck(Config config) {
     if (config.hasPath(Constant.LOCAL_WITNESS_ACCOUNT_ADDRESS)) {
       byte[] bytes = Commons

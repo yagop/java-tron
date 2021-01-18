@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.tron.consensus.base.Param;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.TransactionTrace.TimeResultType;
@@ -20,11 +21,18 @@ public class PendingManager implements AutoCloseable {
 
   public PendingManager(Manager db) {
     this.dbManager = db;
-    db.getPendingTransactions().forEach(transactionCapsule -> {
-      if (System.currentTimeMillis() - transactionCapsule.getTime() < timeout) {
-        tmpTransactions.add(transactionCapsule);
-      }
-    });
+    if (!Args.getInstance().isOpenRemoveSRPendingTx() && dbManager.getChainBaseManager()
+        .getWitnesses().contains(Param.getInstance().getMiner().getPrivateKeyAddress())) {
+      tmpTransactions.addAll(db.getPendingTransactions());
+    } else {
+      db.getPendingTransactions().forEach(transactionCapsule -> {
+        if (System.currentTimeMillis() - transactionCapsule.getTime() < timeout) {
+          tmpTransactions.add(transactionCapsule);
+        } else {
+          logger.warn("remove tx from pending, txId:{}", transactionCapsule.getTransactionId());
+        }
+      });
+    }
 
     if (db.getPendingTransactions().size() > tmpTransactions.size()) {
       MetricsUtil.meterMark(MetricsKey.BLOCKCHAIN_MISSED_TRANSACTION,
