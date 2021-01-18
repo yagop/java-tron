@@ -21,13 +21,14 @@ public class PendingManager implements AutoCloseable {
 
   public PendingManager(Manager db) {
     this.dbManager = db;
-    if (dbManager.getChainBaseManager().getWitnesses()
-        .contains(Param.getInstance().getMiner().getPrivateKeyAddress())) {
+    if (!Args.getInstance().isOpenRemoveSRPendingTx() && dbManager.getChainBaseManager()
+        .getWitnesses().contains(Param.getInstance().getMiner().getPrivateKeyAddress())) {
       tmpTransactions.addAll(db.getPendingTransactions());
     } else {
       db.getPendingTransactions().forEach(transactionCapsule -> {
         if (System.currentTimeMillis() - transactionCapsule.getTime() < timeout) {
           tmpTransactions.add(transactionCapsule);
+          logger.warn("remove tx from pending, txId:{}", transactionCapsule.getTransactionId());
         }
       });
     }

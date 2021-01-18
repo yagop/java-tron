@@ -268,4 +268,5 @@ public class Constant {
   public static final String METRICS_INFLUXDB_PORT = "node.metrics.influxdb.port";
   public static final String METRICS_INFLUXDB_DATABASE = "node.metrics.influxdb.database";
   public static final String METRICS_REPORT_INTERVAL = "node.metrics.influxdb.metricsReportInterval";
+  public static final String OPEN_REMOVE_SR_PENDING_TX = "node.openRemoveSRPendingTx";
 }

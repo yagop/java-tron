@@ -180,6 +180,7 @@ public class Args extends CommonParameter {
     PARAMETER.allowTvmIstanbul = 0;
     PARAMETER.allowTvmStake = 0;
     PARAMETER.allowTvmAssetIssue = 0;
+    PARAMETER.openRemoveSRPendingTx = false;
   }
 
   /**
@@ -742,7 +743,8 @@ public class Args extends CommonParameter {
     PARAMETER.setOpenHistoryQueryWhenLiteFN(
             config.hasPath(Constant.NODE_OPEN_HISTORY_QUERY_WHEN_LITEFN)
                     && config.getBoolean(Constant.NODE_OPEN_HISTORY_QUERY_WHEN_LITEFN));
-
+    PARAMETER.openRemoveSRPendingTx = config.hasPath(Constant.OPEN_REMOVE_SR_PENDING_TX) ? config
+            .getBoolean(Constant.OPEN_REMOVE_SR_PENDING_TX) : false;
     logConfig();
   }
 
