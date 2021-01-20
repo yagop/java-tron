@@ -138,6 +138,9 @@ public class CommonParameter {
   public boolean nodeDiscoveryPublicHomeNode;
   @Getter
   @Setter
+  public long nodeDiscoveryPingTimeout;
+  @Getter
+  @Setter
   public long nodeP2pPingInterval;
   @Getter
   @Setter
@@ -297,6 +300,18 @@ public class CommonParameter {
   @Getter
   @Setter
   public long allowMarketTransaction; //committee parameter
+
+  @Getter
+  @Setter
+  public long allowTransactionFeePool;
+
+  @Getter
+  @Setter
+  public long allowBlackHoleOptimization;
+
+  // @Getter
+  // @Setter
+  // public long allowShieldedTransaction; //committee parameter
   // full node used this parameter to close shielded transaction
   @Getter
   @Setter
@@ -440,6 +455,11 @@ public class CommonParameter {
   @Getter
   @Setter
   public boolean isLiteFullNode = false;
+
+  @Getter
+  @Setter
+  @Parameter(names = {"--history-balance-lookup"})
+  public boolean historyBalanceLookup = false;
 
   @Getter
   @Setter
