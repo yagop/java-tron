@@ -27,7 +27,6 @@ import static org.tron.core.config.Parameter.DatabaseConstants.MARKET_COUNT_LIMI
 import static org.tron.core.config.Parameter.DatabaseConstants.PROPOSAL_COUNT_LIMIT_MAX;
 
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.base.CaseFormat;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
@@ -4149,14 +4148,19 @@ public class Wallet {
             dbManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
     JSONObject amount = new JSONObject();
     JSONObject shieldedAmount = new JSONObject();
-    shieldedAmount.put("fromContract", getTotalShieldedTRC20Balance().toString(10));
+    shieldedAmount
+        .put("fromContract", recursivelyAddComma(getTotalShieldedTRC20Balance().toString(10)));
     shieldedAmount.put("fromTransaction",
-        dbManager.getDynamicPropertiesStore().getShieldedTRC20CurrentTotalAmount().toString(10));
+        recursivelyAddComma(
+            dbManager.getDynamicPropertiesStore().getShieldedTRC20CurrentTotalAmount()
+                .toString(10)));
     amount.put("totalShieldedAmount", shieldedAmount);
     amount.put("totalMintAmount",
-        dbManager.getDynamicPropertiesStore().getShieldedTRC20TotalMintAmount().toString(10));
+        recursivelyAddComma(
+            dbManager.getDynamicPropertiesStore().getShieldedTRC20TotalMintAmount().toString(10)));
     amount.put("totalBurnAmount",
-        dbManager.getDynamicPropertiesStore().getShieldedTRC20TotalBurnAmount().toString(10));
+        recursivelyAddComma(
+            dbManager.getDynamicPropertiesStore().getShieldedTRC20TotalBurnAmount().toString(10)));
     result.put("amount", amount);
     JSONObject number = new JSONObject();
     number.put("totalShieldedTRC20Num", totalSuccessNum + totalFailNum);
@@ -4214,5 +4218,13 @@ public class Wallet {
     return result.toJSONString();
   }
 
+  private String recursivelyAddComma(String s) {
+    int length = s.length();
+    if (length <= 3) {
+      return s;
+    }
+    return recursivelyAddComma(s.substring(0, length - 3)).concat(",")
+        .concat(s.substring(length - 3, length));
+  }
 }
 
