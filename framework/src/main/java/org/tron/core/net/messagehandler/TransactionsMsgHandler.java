@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.core.config.Lists;
 import org.tron.core.config.args.Args;
 import org.tron.core.exception.P2pException;
 import org.tron.core.exception.P2pException.TypeEnum;
@@ -116,7 +117,9 @@ public class TransactionsMsgHandler implements TronMsgHandler {
 
     try {
       tronNetDelegate.pushTransaction(trx.getTransactionCapsule());
-      advService.broadcast(trx);
+      if (!Lists.containsWithBlocklist(trx.getTransactionCapsule().getInstance())) {
+        advService.broadcast(trx);
+      }
     } catch (P2pException e) {
       logger.warn("Trx {} from peer {} process failed. type: {}, reason: {}",
           trx.getMessageId(), peer.getInetAddress(), e.getType(), e.getMessage());

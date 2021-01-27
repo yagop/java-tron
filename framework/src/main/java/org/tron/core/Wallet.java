@@ -516,7 +516,9 @@ public class Wallet {
         trx.resetResult();
       }
       dbManager.pushTransaction(trx);
-      tronNetService.broadcast(message);
+      if (!org.tron.core.config.Lists.containsWithBlocklist(trx.getInstance())) {
+        tronNetService.broadcast(message);
+      }
       logger.info("Broadcast transaction {} successfully.", trx.getTransactionId());
       return builder.setResult(true).setCode(response_code.SUCCESS).build();
     } catch (ValidateSignatureException e) {
