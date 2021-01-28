@@ -12,6 +12,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.StringUtil;
@@ -26,6 +27,10 @@ public class Lists {
   @PostConstruct
   public void load() {
     String blocklistPath = CommonParameter.getInstance().getBlocklistPath();
+    if (StringUtils.isEmpty(blocklistPath)) {
+      return;
+    }
+
     try {
       List<String> addressList = FileUtils.readLines(new File(blocklistPath), Charsets.UTF_8);
       for (String s : addressList) {
