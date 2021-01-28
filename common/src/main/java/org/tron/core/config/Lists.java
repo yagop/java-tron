@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -32,11 +33,16 @@ public class Lists {
     }
 
     try {
-      List<String> addressList = FileUtils.readLines(new File(blocklistPath), Charsets.UTF_8);
+      List<String> addressList =
+          FileUtils.readLines(new File(blocklistPath), Charsets.UTF_8).stream()
+              .filter(StringUtils::isNotBlank)
+              .map(String::trim)
+              .collect(Collectors.toList());
       for (String s : addressList) {
         byte[] bytes = StringUtil.decodeFromBase58Check(s);
         if (bytes == null) {
-          throw new IllegalArgumentException("this address format is not base58, please check it. " + s);
+          throw new IllegalArgumentException("this address format is not base58, please check it. "
+              + s);
         }
         ByteString bs = ByteString.copyFrom(bytes);
         BLOCKLIST.add(bs);
