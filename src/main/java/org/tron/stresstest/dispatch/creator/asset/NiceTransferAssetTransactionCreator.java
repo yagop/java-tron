@@ -34,7 +34,7 @@ public class NiceTransferAssetTransactionCreator extends AbstractTransactionCrea
     while (curAccount == null || curAccount.isEmpty()) {
       FullNode.accountQueue.poll();
       if(retryTimes-- <= 0) {
-        System.out.println("Random account is wrong,please check");
+        System.out.println("Random account is wrong,please check, account Queue size:" + FullNode.accountQueue.size());
         break;
       }
     }
