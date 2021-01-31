@@ -30,6 +30,14 @@ public class NiceTransferAssetTransactionCreator extends AbstractTransactionCrea
 
 
     String curAccount = FullNode.accountQueue.poll();
+    int retryTimes= 5;
+    while (curAccount == null || curAccount.isEmpty()) {
+      FullNode.accountQueue.poll();
+      if(retryTimes-- <= 0) {
+        System.out.println("Random account is wrong,please check");
+        break;
+      }
+    }
     TransactionFactory.context.getBean(CreatorCounter.class).put(this.getClass().getName());
     Contract.TransferAssetContract contract = Contract.TransferAssetContract.newBuilder()
             .setAssetName(ByteString.copyFrom(assetName.getBytes()))
