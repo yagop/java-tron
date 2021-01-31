@@ -45,15 +45,7 @@ public class TransferTrc20Creator extends AbstractTransactionCreator implements 
 
     contractAddress= FullNode.contractAddressList.get(contractIndex.getAndAdd(1) % 200);
     String curAccount = FullNode.accountQueue.poll();
-    int retryTimes= 5;
-    while (curAccount == null || curAccount.isEmpty()) {
-      FullNode.accountQueue.poll();
-      if(retryTimes-- <= 0) {
-        System.out.println("Random account is wrong,please check, account Queue size:" + FullNode.accountQueue.size());
-        break;
-      }
-    }
-    param = "\"" + FullNode.accountQueue.poll() + "\",1";
+    param = "\"" + curAccount + "\",1";
     FullNode.accountQueue.offer(curAccount);
     try {
 

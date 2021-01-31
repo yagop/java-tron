@@ -106,6 +106,9 @@ public class FullNode {
     if (cfgArgs.isGenerate()) {
       logger.info("is generate is true");
       dispatchCount = cfgArgs.getStressCount()/singleTaskTransactionCount;
+      if(accountQueue.size() < singleTaskTransactionCount) {
+        getAccountList();
+      }
       for(int i = 0; i <= dispatchCount;i++) {
         new TransactionGenerator(context, i == dispatchCount ? cfgArgs.getStressCount()%singleTaskTransactionCount : singleTaskTransactionCount,i).start();
       }

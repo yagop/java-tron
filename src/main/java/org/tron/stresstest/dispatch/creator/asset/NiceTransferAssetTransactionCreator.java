@@ -28,16 +28,8 @@ public class NiceTransferAssetTransactionCreator extends AbstractTransactionCrea
   @Override
   protected Protocol.Transaction create() {
 
-
     String curAccount = FullNode.accountQueue.poll();
-    int retryTimes= 5;
-    while (curAccount == null || curAccount.isEmpty()) {
-      FullNode.accountQueue.poll();
-      if(retryTimes-- <= 0) {
-        System.out.println("Random account is wrong,please check, account Queue size:" + FullNode.accountQueue.size());
-        break;
-      }
-    }
+
     TransactionFactory.context.getBean(CreatorCounter.class).put(this.getClass().getName());
     Contract.TransferAssetContract contract = Contract.TransferAssetContract.newBuilder()
             .setAssetName(ByteString.copyFrom(assetName.getBytes()))
