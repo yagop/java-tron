@@ -29,13 +29,15 @@ public class NiceTransferAssetTransactionCreator extends AbstractTransactionCrea
   protected Protocol.Transaction create() {
 
 
+    String curAccount = FullNode.accountQueue.poll();
     TransactionFactory.context.getBean(CreatorCounter.class).put(this.getClass().getName());
     Contract.TransferAssetContract contract = Contract.TransferAssetContract.newBuilder()
             .setAssetName(ByteString.copyFrom(assetName.getBytes()))
             .setOwnerAddress(ByteString.copyFrom(Wallet.decodeFromBase58Check(ownerAddress)))
-            .setToAddress(ByteString.copyFrom(Wallet.decodeFromBase58Check(FullNode.accountQueue.poll())))
+            .setToAddress(ByteString.copyFrom(Wallet.decodeFromBase58Check(curAccount)))
             .setAmount(amount)
             .build();
+    FullNode.accountQueue.offer(curAccount);
     Protocol.Transaction transaction = createTransaction(contract, ContractType.TransferAssetContract);
     transaction = sign(transaction, ECKey.fromPrivate(ByteArray.fromHexString(privateKey)));
     return transaction;
