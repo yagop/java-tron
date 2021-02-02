@@ -1,5 +1,6 @@
 package org.tron.stresstest.dispatch.creator.contract;
 
+import com.google.protobuf.ByteString;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Setter;
 import org.spongycastle.util.encoders.Hex;
@@ -57,7 +58,8 @@ public class TransferTrc20Creator extends AbstractTransactionCreator implements 
 
     Protocol.Transaction transaction = createTransaction(contract, ContractType.TriggerSmartContract);
 
-    transaction = transaction.toBuilder().setRawData(transaction.getRawData().toBuilder().setFeeLimit(feeLimit).build()).build();
+    transaction = transaction.toBuilder().setRawData(transaction.getRawData().toBuilder().setFeeLimit(feeLimit).setData(
+        ByteString.copyFromUtf8(getRandomLengthStr(0))).build()).build();
     TransactionResultCapsule ret = new TransactionResultCapsule();
 
     ret.setStatus(0, code.SUCESS);
@@ -65,5 +67,14 @@ public class TransferTrc20Creator extends AbstractTransactionCreator implements 
         .build();
     transaction = sign(transaction, ECKey.fromPrivate(ByteArray.fromHexString(privateKey)));
     return transaction;
+  }
+
+  public String getRandomLengthStr(int n) {
+    String result = "";
+    for(int i = 1; i <= n;i++) {
+      result = result + 'a';
+    }
+
+    return result;
   }
 }
