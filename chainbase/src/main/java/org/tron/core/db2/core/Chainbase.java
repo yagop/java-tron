@@ -21,7 +21,7 @@ import org.tron.core.db2.common.Value.Operator;
 import org.tron.core.db2.common.WrappedByteArray;
 import org.tron.core.exception.ItemNotFoundException;
 
-public class Chainbase implements IRevokingDB {
+public class Chainbase<U> implements IRevokingDB<U> {
 
   // public static Map<String, byte[]> assetsAddress = new HashMap<>(); // key = name , value = address
   public enum Cursor {
@@ -33,9 +33,9 @@ public class Chainbase implements IRevokingDB {
   //true:fullnode, false:soliditynode
   private ThreadLocal<Cursor> cursor = new ThreadLocal<>();
   private ThreadLocal<Long> offset = new ThreadLocal<>();
-  private Snapshot head;
+  private Snapshot<U> head;
 
-  public Chainbase(Snapshot head) {
+  public Chainbase(Snapshot<U> head) {
     this.head = head;
     cursor.set(Cursor.HEAD);
     offset.set(0L);
@@ -56,7 +56,7 @@ public class Chainbase implements IRevokingDB {
     this.offset.set(offset);
   }
 
-  private Snapshot head() {
+  private Snapshot<U> head() {
     if (cursor.get() == null) {
       return head;
     }
@@ -72,7 +72,7 @@ public class Chainbase implements IRevokingDB {
         }
 
         if (offset.get() >= 0) {
-          Snapshot tmp = head;
+          Snapshot<U> tmp = head;
           for (int i = 0; i < offset.get() && tmp != tmp.getRoot(); i++) {
             tmp = tmp.getPrevious();
           }
@@ -85,11 +85,11 @@ public class Chainbase implements IRevokingDB {
     }
   }
 
-  public synchronized Snapshot getHead() {
+  public synchronized Snapshot<U> getHead() {
     return head();
   }
 
-  public synchronized void setHead(Snapshot head) {
+  public synchronized void setHead(Snapshot<U> head) {
     this.head = head;
   }
 
@@ -109,7 +109,7 @@ public class Chainbase implements IRevokingDB {
   }
 
   @Override
-  public synchronized void put(byte[] key, byte[] value) {
+  public synchronized void put(byte[] key, U value) {
     head().put(key, value);
   }
 
@@ -119,17 +119,12 @@ public class Chainbase implements IRevokingDB {
   }
 
   @Override
-  public synchronized byte[] get(byte[] key) throws ItemNotFoundException {
-    byte[] value = getUnchecked(key);
-    if (value == null) {
-      throw new ItemNotFoundException();
-    }
-
-    return value;
+  public synchronized U get(byte[] key) throws ItemNotFoundException {
+    return getUnchecked(key);
   }
 
   @Override
-  public synchronized byte[] getUnchecked(byte[] key) {
+  public synchronized U getUnchecked(byte[] key) {
     return head().get(key);
   }
 
@@ -149,7 +144,8 @@ public class Chainbase implements IRevokingDB {
   }
 
   // for blockstore
-  private Set<byte[]> getValuesNext(Snapshot head, byte[] key, long limit) {
+  @SuppressWarnings("rawtypes")
+  private Set<byte[]> getValuesNext(Snapshot<U> head, byte[] key, long limit) {
     if (limit <= 0) {
       return Collections.emptySet();
     }
@@ -259,6 +255,7 @@ public class Chainbase implements IRevokingDB {
   }
 
   // for blockstore
+  @SuppressWarnings("rawtypes")
   private synchronized Set<byte[]> getlatestValues(Snapshot head, long limit) {
     if (limit <= 0) {
       return Collections.emptySet();
@@ -295,7 +292,8 @@ public class Chainbase implements IRevokingDB {
   }
 
   // for accout-trace
-  private Map<byte[], byte[]> getNext(Snapshot head, byte[] key, long limit) {
+  @SuppressWarnings("rawtypes")
+  private Map<byte[], byte[]> getNext(Snapshot<U> head, byte[] key, long limit) {
     if (limit <= 0) {
       return Collections.emptyMap();
     }
