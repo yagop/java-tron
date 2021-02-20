@@ -35,7 +35,7 @@ import org.tron.core.exception.ItemNotFoundException;
 
 
 @Slf4j(topic = "DB")
-public abstract class TronStoreWithRevoking<T extends ProtoCapsule> implements ITronChainBase<T> {
+public abstract class TronStoreWithRevoking<T extends ProtoCapsule, U> implements ITronChainBase<T> {
 
   @Getter // only for unit test
   protected IRevokingDB revokingDB;
@@ -53,7 +53,7 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule> implements I
           getOptionsByDbNameForLevelDB(dbName));
     } else if (dbVersion == 2) {
       if ("LEVELDB".equals(dbEngine.toUpperCase())) {
-        this.revokingDB = new Chainbase(new SnapshotRoot(
+        this.revokingDB = new Chainbase(new SnapshotRoot<U>(
             new LevelDB(
                 new LevelDbDataSourceImpl(StorageUtils.getOutputDirectoryByDbName(dbName),
                     dbName,
@@ -65,7 +65,7 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule> implements I
             .get(StorageUtils.getOutputDirectoryByDbName(dbName), CommonParameter
                 .getInstance().getStorage().getDbDirectory()).toString();
 
-        this.revokingDB = new Chainbase(new SnapshotRoot(
+        this.revokingDB = new Chainbase(new SnapshotRoot<U>(
             new RocksDB(
                 new RocksDbDataSourceImpl(parentPath,
                     dbName, CommonParameter.getInstance()
@@ -87,7 +87,7 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule> implements I
   protected TronStoreWithRevoking(DB<byte[], byte[]> db) {
     int dbVersion = CommonParameter.getInstance().getStorage().getDbVersion();
     if (dbVersion == 2) {
-      this.revokingDB = new Chainbase(new SnapshotRoot(db));
+      this.revokingDB = new Chainbase(new SnapshotRoot<U>(db));
     } else {
       throw new RuntimeException("db version is only 2.(" + dbVersion + ")");
     }

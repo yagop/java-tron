@@ -7,15 +7,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.protobuf.GeneratedMessageV3;
 import lombok.Getter;
 import org.tron.core.db2.common.DB;
 import org.tron.core.db2.common.Flusher;
 import org.tron.core.db2.common.WrappedByteArray;
 
-public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
+public class SnapshotRoot<U extends GeneratedMessageV3> extends AbstractSnapshot<byte[], byte[], U> {
 
   @Getter
-  private Snapshot solidity;
+  private Snapshot<U> solidity;
 
   public SnapshotRoot(DB<byte[], byte[]> db) {
     this.db = db;
@@ -23,13 +25,13 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
   }
 
   @Override
-  public byte[] get(byte[] key) {
-    return db.get(key);
+  public U get(byte[] key) {
+    return null;
   }
 
   @Override
-  public void put(byte[] key, byte[] value) {
-    db.put(key, value);
+  public void put(byte[] key, U value) {
+    db.put(key, value.toByteArray());
   }
 
   @Override
@@ -38,8 +40,8 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
   }
 
   @Override
-  public void merge(Snapshot from) {
-    SnapshotImpl snapshot = (SnapshotImpl) from;
+  public void merge(Snapshot<U> from) {
+    SnapshotImpl<U> snapshot = (SnapshotImpl<U>) from;
     Map<WrappedByteArray, WrappedByteArray> batch = Streams.stream(snapshot.db)
         .map(e -> Maps.immutableEntry(WrappedByteArray.of(e.getKey().getBytes()),
             WrappedByteArray.of(e.getValue().getBytes())))
@@ -47,10 +49,10 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
     ((Flusher) db).flush(batch);
   }
 
-  public void merge(List<Snapshot> snapshots) {
+  public void merge(List<Snapshot<U>> snapshots) {
     Map<WrappedByteArray, WrappedByteArray> batch = new HashMap<>();
-    for (Snapshot snapshot : snapshots) {
-      SnapshotImpl from = (SnapshotImpl) snapshot;
+    for (Snapshot<U> snapshot : snapshots) {
+      SnapshotImpl<U> from = (SnapshotImpl<U>) snapshot;
       Streams.stream(from.db)
           .map(e -> Maps.immutableEntry(WrappedByteArray.of(e.getKey().getBytes()),
               WrappedByteArray.of(e.getValue().getBytes())))
@@ -61,12 +63,12 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
   }
 
   @Override
-  public Snapshot retreat() {
+  public Snapshot<U> retreat() {
     return this;
   }
 
   @Override
-  public Snapshot getRoot() {
+  public Snapshot<U> getRoot() {
     return this;
   }
 
@@ -101,7 +103,7 @@ public class SnapshotRoot extends AbstractSnapshot<byte[], byte[]> {
   }
 
   @Override
-  public Snapshot newInstance() {
-    return new SnapshotRoot(db.newInstance());
+  public Snapshot<U> newInstance() {
+    return new SnapshotRoot<>(db.newInstance());
   }
 }

@@ -1,13 +1,15 @@
 package org.tron.core.db2.common;
 
+import com.google.protobuf.GeneratedMessageV3;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HashDB implements DB<Key, Value> {
+public class HashDB<U extends GeneratedMessageV3> implements DB<Key, InstanceValue<U>> {
 
-  private Map<Key, Value> db = new ConcurrentHashMap<>();
+  private Map<Key, InstanceValue<U>> db = new ConcurrentHashMap<>();
   private String name;
 
   public HashDB(String name) {
@@ -15,12 +17,12 @@ public class HashDB implements DB<Key, Value> {
   }
 
   @Override
-  public Value get(Key key) {
+  public InstanceValue<U> get(Key key) {
     return db.get(key);
   }
 
   @Override
-  public void put(Key key, Value value) {
+  public void put(Key key, InstanceValue<U> value) {
     db.put(key, value);
   }
 
@@ -45,7 +47,7 @@ public class HashDB implements DB<Key, Value> {
   }
 
   @Override
-  public Iterator<Map.Entry<Key, Value>> iterator() {
+  public Iterator<Map.Entry<Key, InstanceValue<U>>> iterator() {
     return db.entrySet().iterator();
   }
 
@@ -55,7 +57,7 @@ public class HashDB implements DB<Key, Value> {
   }
 
   @Override
-  public HashDB newInstance() {
-    return new HashDB(name);
+  public HashDB<U> newInstance() {
+    return new HashDB<>(name);
   }
 }
