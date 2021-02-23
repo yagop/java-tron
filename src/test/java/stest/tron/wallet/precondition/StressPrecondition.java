@@ -238,21 +238,18 @@ public class StressPrecondition {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(48L, 1L);
-        approveProposalIndex = i;
+
 
       }
       if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowOptimizeBlackHole") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(49L, 1L);
-        //approveProposalIndex = i;
+        approveProposalIndex = i;
 
       }
     }
 
-    proposalMap.put(47L, 5000000000L);
-    proposalMap.put(11L, 140L);
-    proposalMap.put(3L, 140L);
     if (proposalMap.size() >= 1) {
 
       PublicMethed.createProposal(witness001Address, witnessKey001,
