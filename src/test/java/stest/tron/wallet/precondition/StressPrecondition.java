@@ -647,7 +647,7 @@ public class StressPrecondition {
 
   @Test(enabled = true)
   public void test012DeployDifferentSmartContract() {
-    Integer contractCount = 1;
+    Integer contractCount = 200;
     while (contractCount > 0) {
 
       //String contractName = "TRC20_TRON";
