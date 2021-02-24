@@ -1204,7 +1204,6 @@ public class Manager {
    * Generate a block.
    */
   public synchronized BlockCapsule generateBlock(Miner miner, long blockTime, long timeout) {
-    VMActuator.setGenerateBlock(true);
 
     long postponedTrxCount = 0;
 
@@ -1309,7 +1308,6 @@ public class Manager {
     blockCapsule.setMerkleRoot();
     blockCapsule.sign(miner.getPrivateKey());
 
-    VMActuator.setGenerateBlock(false);
     return blockCapsule;
 
   }
@@ -1371,6 +1369,8 @@ public class Manager {
       ReceiptCheckErrException, VMIllegalException, TooBigTransactionResultException,
       ZksnarkException, BadBlockException {
     // todo set revoking db max size.
+
+    VMActuator.setHandleBlock(true);
 
     // checkWitness
     if (!consensus.validBlock(block)) {
@@ -1438,6 +1438,7 @@ public class Manager {
     updateDynamicProperties(block);
 
     chainBaseManager.getBalanceTraceStore().resetCurrentBlockTrace();
+    VMActuator.setHandleBlock(false);
   }
 
   private void payReward(BlockCapsule block) {

@@ -63,7 +63,7 @@ import org.tron.protos.contract.SmartContractOuterClass.TriggerSmartContract;
 @Slf4j(topic = "VM")
 public class VMActuator implements Actuator2 {
   @Setter
-  private static boolean generateBlock = false;
+  private static boolean handleBlock = false;
 
   private Transaction trx;
   private BlockCapsule blockCap;
@@ -172,11 +172,11 @@ public class VMActuator implements Actuator2 {
         }
 
         long start = 0;
-        if (generateBlock) {
+        if (handleBlock) {
           start = System.nanoTime();
         }
         vm.play(program);
-        if (generateBlock) {
+        if (handleBlock) {
           logger.info("VM play time : {}", System.nanoTime() - start);
         }
         result = program.getResult();
