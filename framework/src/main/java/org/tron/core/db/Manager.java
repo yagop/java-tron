@@ -73,6 +73,7 @@ import org.tron.consensus.base.Param.Miner;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.Constant;
 import org.tron.core.actuator.ActuatorCreator;
+import org.tron.core.actuator.VMActuator;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockBalanceTraceCapsule;
 import org.tron.core.capsule.BlockCapsule;
@@ -217,6 +218,7 @@ public class Manager {
   // the capacity is equal to Integer.MAX_VALUE default
   private BlockingQueue<TransactionCapsule> rePushTransactions;
   private BlockingQueue<TriggerCapsule> triggerCapsuleQueue;
+
 
   /**
    * Cycle thread to rePush Transactions
@@ -1202,6 +1204,7 @@ public class Manager {
    * Generate a block.
    */
   public synchronized BlockCapsule generateBlock(Miner miner, long blockTime, long timeout) {
+    VMActuator.setGenerateBlock(true);
 
     long postponedTrxCount = 0;
 
@@ -1306,6 +1309,7 @@ public class Manager {
     blockCapsule.setMerkleRoot();
     blockCapsule.sign(miner.getPrivateKey());
 
+    VMActuator.setGenerateBlock(false);
     return blockCapsule;
 
   }
