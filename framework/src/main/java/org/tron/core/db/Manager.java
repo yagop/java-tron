@@ -1204,7 +1204,7 @@ public class Manager {
    * Generate a block.
    */
   public synchronized BlockCapsule generateBlock(Miner miner, long blockTime, long timeout) {
-
+    VMActuator.setGenerateBlock(true);
     long postponedTrxCount = 0;
 
     BlockCapsule blockCapsule = new BlockCapsule(chainBaseManager.getHeadBlockNum() + 1,
@@ -1308,6 +1308,7 @@ public class Manager {
     blockCapsule.setMerkleRoot();
     blockCapsule.sign(miner.getPrivateKey());
 
+    VMActuator.setGenerateBlock(false);
     return blockCapsule;
 
   }

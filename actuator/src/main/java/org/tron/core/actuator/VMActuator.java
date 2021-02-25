@@ -64,6 +64,8 @@ import org.tron.protos.contract.SmartContractOuterClass.TriggerSmartContract;
 public class VMActuator implements Actuator2 {
   @Setter
   private static boolean handleBlock = false;
+  @Setter
+  private static boolean generateBlock = false;
 
   private Transaction trx;
   private BlockCapsule blockCap;
@@ -172,12 +174,16 @@ public class VMActuator implements Actuator2 {
         }
 
         long start = 0;
-        if (handleBlock) {
+        if (handleBlock || generateBlock) {
           start = System.nanoTime();
         }
         vm.play(program);
         if (handleBlock) {
-          logger.info("VM play time : {}", System.nanoTime() - start);
+          logger.info("handle block, VM play time : {}", System.nanoTime() - start);
+        }
+
+        if (generateBlock) {
+          logger.info("generate block, VM play time : {}", System.nanoTime() - start);
         }
         result = program.getResult();
 
