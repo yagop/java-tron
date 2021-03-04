@@ -6,12 +6,16 @@ import static org.tron.core.config.Parameter.NetConstants.MSG_CACHE_DURATION_IN_
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -230,16 +234,22 @@ public class AdvService {
       return;
     }
 
+    logger.info("before invToFetch size:{}", invToFetch.size());
     InvSender invSender = new InvSender();
     long now = System.currentTimeMillis();
     invToFetch.forEach((item, time) -> {
       if (time < now - MSG_CACHE_DURATION_IN_BLOCKS * BLOCK_PRODUCED_INTERVAL) {
-        logger.info("This obj is too late to fetch, type: {} hash: {}.", item.getType(),
-            item.getHash());
+        String localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
+            TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss"));
+        logger.info("This obj is too late to fetch, type: {} hash: {}. time: {} {}", item.getType(),
+            item.getHash(), time, localDateTime);
         invToFetch.remove(item);
         invToFetchCache.invalidate(item);
         return;
       }
+
+      logger.info("middle invToFetch size:{}", invToFetch.size());
+
       peers.stream().filter(peer -> peer.getAdvInvReceive().getIfPresent(item) != null
           && invSender.getSize(peer) < MAX_TRX_FETCH_PER_PEER)
           .sorted(Comparator.comparingInt(peer -> invSender.getSize(peer)))
@@ -249,6 +259,8 @@ public class AdvService {
             invToFetch.remove(item);
           });
     });
+
+    logger.info("after invToFetch size:{}", invToFetch.size());
 
     invSender.sendFetch();
   }
