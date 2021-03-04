@@ -6,10 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.StorageRowCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 @Slf4j(topic = "DB")
 @Component
-public class StorageRowStore extends TronStoreWithRevoking<StorageRowCapsule> {
+public class StorageRowStore extends TronStoreWithRevoking<StorageRowCapsule, Protocol.ByteArray> {
 
   @Autowired
   private StorageRowStore(@Value("storage-row") String dbName) {

@@ -9,9 +9,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.DelegatedResourceCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 @Component
-public class DelegatedResourceStore extends TronStoreWithRevoking<DelegatedResourceCapsule> {
+public class DelegatedResourceStore extends TronStoreWithRevoking<DelegatedResourceCapsule,
+    Protocol.DelegatedResource> {
 
   @Autowired
   public DelegatedResourceStore(@Value("DelegatedResource") String dbName) {
@@ -21,8 +23,9 @@ public class DelegatedResourceStore extends TronStoreWithRevoking<DelegatedResou
   @Override
   public DelegatedResourceCapsule get(byte[] key) {
 
-    byte[] value = revokingDB.getUnchecked(key);
-    return ArrayUtils.isEmpty(value) ? null : new DelegatedResourceCapsule(value);
+    Protocol.DelegatedResource value = revokingDB.getUnchecked(key);
+    return value == null || value == Protocol.DelegatedResource.getDefaultInstance() ?
+        null : new DelegatedResourceCapsule(value);
   }
 
   @Deprecated

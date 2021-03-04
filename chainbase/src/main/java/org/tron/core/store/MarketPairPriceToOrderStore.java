@@ -17,9 +17,11 @@ import org.tron.core.capsule.MarketOrderIdListCapsule;
 import org.tron.core.capsule.utils.MarketUtils;
 import org.tron.core.db.TronStoreWithRevoking;
 import org.tron.core.exception.ItemNotFoundException;
+import org.tron.protos.Protocol;
 
 @Component
-public class MarketPairPriceToOrderStore extends TronStoreWithRevoking<MarketOrderIdListCapsule> {
+public class MarketPairPriceToOrderStore extends TronStoreWithRevoking<MarketOrderIdListCapsule,
+    Protocol.MarketOrderIdList> {
 
   @Autowired
   protected MarketPairPriceToOrderStore(@Value("market_pair_price_to_order") String dbName) {
@@ -42,7 +44,7 @@ public class MarketPairPriceToOrderStore extends TronStoreWithRevoking<MarketOrd
 
   @Override
   public MarketOrderIdListCapsule get(byte[] key) throws ItemNotFoundException {
-    byte[] value = revokingDB.get(key);
+    Protocol.MarketOrderIdList value = revokingDB.get(key);
     return new MarketOrderIdListCapsule(value);
   }
 

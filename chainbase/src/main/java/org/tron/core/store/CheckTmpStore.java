@@ -38,13 +38,4 @@ public class CheckTmpStore extends TronDatabase<byte[]> {
     return false;
   }
 
-  @Override
-  public void forEach(Consumer action) {
-
-  }
-
-  @Override
-  public Spliterator spliterator() {
-    return null;
-  }
 }

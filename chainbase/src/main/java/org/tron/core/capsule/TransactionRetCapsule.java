@@ -4,6 +4,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.core.exception.BadItemException;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.TransactionInfo;
 import org.tron.protos.Protocol.TransactionRet;
 
@@ -25,6 +26,10 @@ public class TransactionRetCapsule implements ProtoCapsule<TransactionRet> {
   // only for test
   public TransactionRetCapsule() {
     transactionRet = TransactionRet.newBuilder().build();
+  }
+
+  public TransactionRetCapsule(Protocol.TransactionRet transactionRet) {
+    this.transactionRet = transactionRet;
   }
 
   public TransactionRetCapsule(byte[] data) throws BadItemException {

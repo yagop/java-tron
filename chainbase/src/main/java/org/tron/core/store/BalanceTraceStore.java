@@ -32,7 +32,8 @@ import java.util.Objects;
 
 @Component
 @Slf4j(topic = "DB")
-public class BalanceTraceStore extends TronStoreWithRevoking<BlockBalanceTraceCapsule>  {
+public class BalanceTraceStore extends TronStoreWithRevoking<BlockBalanceTraceCapsule,
+    BalanceContract.BlockBalanceTrace>  {
 
   @Getter
   private BlockCapsule.BlockId currentBlockId;
@@ -137,8 +138,8 @@ public class BalanceTraceStore extends TronStoreWithRevoking<BlockBalanceTraceCa
     }
 
     byte[] key = ByteArray.fromLong(blockNumber);
-    byte[] value = revokingDB.getUnchecked(key);
-    if (Objects.isNull(value)) {
+    BalanceContract.BlockBalanceTrace value = revokingDB.getUnchecked(key);
+    if (Objects.isNull(value) || value == BalanceContract.BlockBalanceTrace.getDefaultInstance()) {
       return null;
     }
 
@@ -157,8 +158,8 @@ public class BalanceTraceStore extends TronStoreWithRevoking<BlockBalanceTraceCa
     }
 
     byte[] key = ByteArray.fromLong(blockNumber);
-    byte[] value = revokingDB.getUnchecked(key);
-    if (Objects.isNull(value)) {
+    BalanceContract.BlockBalanceTrace value = revokingDB.getUnchecked(key);
+    if (Objects.isNull(value) || value == BalanceContract.BlockBalanceTrace.getDefaultInstance()) {
       return null;
     }
 

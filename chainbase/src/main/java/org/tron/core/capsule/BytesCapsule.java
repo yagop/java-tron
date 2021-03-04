@@ -1,20 +1,27 @@
 package org.tron.core.capsule;
 
-public class BytesCapsule implements ProtoCapsule {
+import com.google.protobuf.ByteString;
+import org.tron.protos.Protocol;
 
-  private byte[] bytes;
+public class BytesCapsule implements ProtoCapsule<Protocol.ByteArray> {
+
+  private Protocol.ByteArray byteArray;
 
   public BytesCapsule(byte[] bytes) {
-    this.bytes = bytes;
+    this.byteArray = Protocol.ByteArray.newBuilder().setData(ByteString.copyFrom(bytes)).build();
+  }
+
+  public BytesCapsule(Protocol.ByteArray bytes) {
+    this.byteArray = bytes;
   }
 
   @Override
   public byte[] getData() {
-    return bytes;
+    return byteArray.getData().toByteArray();
   }
 
   @Override
-  public Object getInstance() {
-    return null;
+  public Protocol.ByteArray getInstance() {
+    return byteArray;
   }
 }

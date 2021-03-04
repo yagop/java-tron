@@ -15,7 +15,7 @@ public class ZKProofStore extends TronDatabase<Boolean> {
 
   @Override
   public void put(byte[] key, Boolean item) {
-    byte[] b = {(byte) (item.booleanValue() ? 0x01 : 0x00)};
+    byte[] b = {(byte) (item ? 0x01 : 0x00)};
     dbSource.putData(key, b);
   }
 

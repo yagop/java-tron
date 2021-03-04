@@ -14,11 +14,13 @@ import org.tron.core.capsule.TransactionRetCapsule;
 import org.tron.core.db.TransactionStore;
 import org.tron.core.db.TronStoreWithRevoking;
 import org.tron.core.exception.BadItemException;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.TransactionInfo;
 
 @Slf4j(topic = "DB")
 @Component
-public class TransactionRetStore extends TronStoreWithRevoking<TransactionRetCapsule> {
+public class TransactionRetStore extends TronStoreWithRevoking<TransactionRetCapsule,
+    Protocol.TransactionRet> {
 
   @Autowired
   private TransactionStore transactionStore;
@@ -41,8 +43,8 @@ public class TransactionRetStore extends TronStoreWithRevoking<TransactionRetCap
     if (blockNumber == -1) {
       return null;
     }
-    byte[] value = revokingDB.getUnchecked(ByteArray.fromLong(blockNumber));
-    if (Objects.isNull(value)) {
+    Protocol.TransactionRet value = revokingDB.getUnchecked(ByteArray.fromLong(blockNumber));
+    if (Objects.isNull(value) || value == Protocol.TransactionRet.getDefaultInstance()) {
       return null;
     }
 
@@ -61,8 +63,8 @@ public class TransactionRetStore extends TronStoreWithRevoking<TransactionRetCap
 
   public TransactionRetCapsule getTransactionInfoByBlockNum(byte[] key) throws BadItemException {
 
-    byte[] value = revokingDB.getUnchecked(key);
-    if (Objects.isNull(value)) {
+    Protocol.TransactionRet value = revokingDB.getUnchecked(key);
+    if (Objects.isNull(value) || value == Protocol.TransactionRet.getDefaultInstance()) {
       return null;
     }
 

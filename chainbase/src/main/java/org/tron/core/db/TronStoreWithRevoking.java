@@ -4,6 +4,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.reflect.TypeToken;
+import com.google.protobuf.GeneratedMessageV3;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
@@ -13,7 +14,6 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.iq80.leveldb.Options;
 import org.iq80.leveldb.WriteOptions;
 import org.rocksdb.DirectComparator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,18 +28,20 @@ import org.tron.core.db2.common.LevelDB;
 import org.tron.core.db2.common.RocksDB;
 import org.tron.core.db2.core.Chainbase;
 import org.tron.core.db2.core.ITronChainBase;
-import org.tron.core.db2.core.RevokingDBWithCachingOldValue;
 import org.tron.core.db2.core.SnapshotRoot;
 import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ItemNotFoundException;
 
 
 @Slf4j(topic = "DB")
-public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U> implements ITronChainBase<T> {
+public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U extends GeneratedMessageV3> implements ITronChainBase<T> {
 
   @Getter // only for unit test
-  protected IRevokingDB revokingDB;
+  protected IRevokingDB<U> revokingDB;
   private TypeToken<T> token = new TypeToken<T>(getClass()) {
+  };
+
+  private TypeToken<U> subToken = new TypeToken<U>(getClass()) {
   };
 
   @Autowired
@@ -48,32 +50,26 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U> implem
   protected TronStoreWithRevoking(String dbName) {
     int dbVersion = CommonParameter.getInstance().getStorage().getDbVersion();
     String dbEngine = CommonParameter.getInstance().getStorage().getDbEngine();
-    if (dbVersion == 1) {
-      this.revokingDB = new RevokingDBWithCachingOldValue(dbName,
-          getOptionsByDbNameForLevelDB(dbName));
-    } else if (dbVersion == 2) {
-      if ("LEVELDB".equals(dbEngine.toUpperCase())) {
-        this.revokingDB = new Chainbase(new SnapshotRoot<>(
-            new LevelDB(
-                new LevelDbDataSourceImpl(StorageUtils.getOutputDirectoryByDbName(dbName),
-                    dbName,
-                    getOptionsByDbNameForLevelDB(dbName),
-                    new WriteOptions().sync(CommonParameter.getInstance()
-                        .getStorage().isDbSync())))));
-      } else if ("ROCKSDB".equals(dbEngine.toUpperCase())) {
-        String parentPath = Paths
-            .get(StorageUtils.getOutputDirectoryByDbName(dbName), CommonParameter
-                .getInstance().getStorage().getDbDirectory()).toString();
+    if ("LEVELDB".equals(dbEngine.toUpperCase())) {
+      this.revokingDB = new Chainbase<>(new SnapshotRoot<>(
+          new LevelDB(
+              new LevelDbDataSourceImpl(StorageUtils.getOutputDirectoryByDbName(dbName),
+                  dbName,
+                  getOptionsByDbNameForLevelDB(dbName),
+                  new WriteOptions().sync(CommonParameter.getInstance()
+                      .getStorage().isDbSync())))));
+    } else if ("ROCKSDB".equals(dbEngine.toUpperCase())) {
+      String parentPath = Paths
+          .get(StorageUtils.getOutputDirectoryByDbName(dbName), CommonParameter
+              .getInstance().getStorage().getDbDirectory()).toString();
 
-        this.revokingDB = new Chainbase(new SnapshotRoot<>(
-            new RocksDB(
-                new RocksDbDataSourceImpl(parentPath,
-                    dbName, CommonParameter.getInstance()
-                    .getRocksDBCustomSettings(), getDirectComparator()))));
-      }
-    } else {
-      throw new RuntimeException("db version is error.");
+      this.revokingDB = new Chainbase<>(new SnapshotRoot<>(
+          new RocksDB(
+              new RocksDbDataSourceImpl(parentPath,
+                  dbName, CommonParameter.getInstance()
+                  .getRocksDBCustomSettings(), getDirectComparator()))));
     }
+
   }
 
   protected org.iq80.leveldb.Options getOptionsByDbNameForLevelDB(String dbName) {
@@ -87,23 +83,10 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U> implem
   protected TronStoreWithRevoking(DB<byte[], byte[]> db) {
     int dbVersion = CommonParameter.getInstance().getStorage().getDbVersion();
     if (dbVersion == 2) {
-      this.revokingDB = new Chainbase(new SnapshotRoot<>(db));
+      this.revokingDB = new Chainbase<U>(new SnapshotRoot<U>(db));
     } else {
       throw new RuntimeException("db version is only 2.(" + dbVersion + ")");
     }
-  }
-
-  // only for test
-  protected TronStoreWithRevoking(String dbName, RevokingDatabase revokingDatabase) {
-    this.revokingDB = new RevokingDBWithCachingOldValue(dbName,
-        (AbstractRevokingStore) revokingDatabase);
-  }
-
-  // only for test
-  protected TronStoreWithRevoking(String dbName, Options options,
-      RevokingDatabase revokingDatabase) {
-    this.revokingDB = new RevokingDBWithCachingOldValue(dbName, options,
-        (AbstractRevokingStore) revokingDatabase);
   }
 
   @Override
@@ -122,7 +105,7 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U> implem
       return;
     }
 
-    revokingDB.put(key, item.getData());
+    revokingDB.put(key, item.getInstance());
   }
 
   @Override
@@ -137,7 +120,7 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U> implem
 
   @Override
   public T getUnchecked(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
+    U value = revokingDB.getUnchecked(key);
 
     try {
       return of(value);
@@ -146,9 +129,9 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule<U>, U> implem
     }
   }
 
-  public T of(byte[] value) throws BadItemException {
+  public T of(U value) throws BadItemException {
     try {
-      Constructor constructor = token.getRawType().getConstructor(byte[].class);
+      Constructor constructor = token.getRawType().getConstructor(subToken.getRawType());
       @SuppressWarnings("unchecked")
       T t = (T) constructor.newInstance((Object) value);
       return t;

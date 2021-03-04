@@ -12,7 +12,7 @@ import org.tron.protos.contract.SmartContractOuterClass.SmartContract;
 
 @Slf4j(topic = "DB")
 @Component
-public class ContractStore extends TronStoreWithRevoking<ContractCapsule> {
+public class ContractStore extends TronStoreWithRevoking<ContractCapsule, SmartContract> {
 
   @Autowired
   private ContractStore(@Value("contract") String dbName) {
@@ -35,7 +35,7 @@ public class ContractStore extends TronStoreWithRevoking<ContractCapsule> {
    * find a transaction  by it's id.
    */
   public byte[] findContractByHash(byte[] trxHash) {
-    return revokingDB.getUnchecked(trxHash);
+    return revokingDB.getUnchecked(trxHash).toByteArray();
   }
 
   /**
@@ -44,8 +44,8 @@ public class ContractStore extends TronStoreWithRevoking<ContractCapsule> {
    * @return
    */
   public SmartContract.ABI getABI(byte[] contractAddress) {
-    byte[] value = revokingDB.getUnchecked(contractAddress);
-    if (ArrayUtils.isEmpty(value)) {
+    SmartContract value = revokingDB.getUnchecked(contractAddress);
+    if (value == null || ArrayUtils.isEmpty(value.toByteArray())) {
       return null;
     }
 

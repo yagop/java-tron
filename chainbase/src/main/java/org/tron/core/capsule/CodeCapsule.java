@@ -15,37 +15,41 @@
 
 package org.tron.core.capsule;
 
+import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.Sha256Hash;
+import org.tron.protos.Protocol;
 
 @Slf4j(topic = "capsule")
-public class CodeCapsule implements ProtoCapsule<byte[]> {
+public class CodeCapsule implements ProtoCapsule<Protocol.ByteArray> {
 
-  private byte[] code;
+  private Protocol.ByteArray code;
 
   public CodeCapsule(byte[] code) {
-    this.code = code;
+    this.code = Protocol.ByteArray.newBuilder()
+        .setData(ByteString.copyFrom(code))
+        .build();
   }
 
   public Sha256Hash getCodeHash() {
     return Sha256Hash.of(CommonParameter.getInstance().isECKeyCryptoEngine(),
-        this.code);
+        this.code.getData().toByteArray());
   }
 
   @Override
   public byte[] getData() {
-    return this.code;
+    return this.code.getData().toByteArray();
   }
 
   @Override
-  public byte[] getInstance() {
+  public Protocol.ByteArray getInstance() {
     return this.code;
   }
 
   @Override
   public String toString() {
-    return Arrays.toString(this.code);
+    return Arrays.toString(this.code.getData().toByteArray());
   }
 }

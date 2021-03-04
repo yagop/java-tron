@@ -11,10 +11,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.WitnessCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 @Slf4j(topic = "DB")
 @Component
-public class WitnessStore extends TronStoreWithRevoking<WitnessCapsule> {
+public class WitnessStore extends TronStoreWithRevoking<WitnessCapsule, Protocol.Witness> {
 
   @Autowired
   protected WitnessStore(@Value("witness") String dbName) {
@@ -32,7 +33,8 @@ public class WitnessStore extends TronStoreWithRevoking<WitnessCapsule> {
 
   @Override
   public WitnessCapsule get(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
-    return ArrayUtils.isEmpty(value) ? null : new WitnessCapsule(value);
+    Protocol.Witness value = revokingDB.getUnchecked(key);
+    return value == null || value == Protocol.Witness.getDefaultInstance()
+        ? null : new WitnessCapsule(value);
   }
 }

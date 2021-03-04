@@ -9,10 +9,11 @@ import org.springframework.stereotype.Component;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 //todo : need Compatibility test
 @Component
-public class AccountIdIndexStore extends TronStoreWithRevoking<BytesCapsule> {
+public class AccountIdIndexStore extends TronStoreWithRevoking<BytesCapsule, Protocol.ByteArray> {
 
   @Autowired
   public AccountIdIndexStore(@Value("accountid-index") String dbName) {
@@ -40,8 +41,10 @@ public class AccountIdIndexStore extends TronStoreWithRevoking<BytesCapsule> {
   @Override
   public BytesCapsule get(byte[] key) {
     byte[] lowerCaseKey = getLowerCaseAccountId(key);
-    byte[] value = revokingDB.getUnchecked(lowerCaseKey);
-    if (ArrayUtils.isEmpty(value)) {
+    Protocol.ByteArray value = revokingDB.getUnchecked(lowerCaseKey);
+    if (value == null
+        || value == Protocol.ByteArray.getDefaultInstance()
+        || value.getData().isEmpty()) {
       return null;
     }
     return new BytesCapsule(value);
@@ -50,8 +53,7 @@ public class AccountIdIndexStore extends TronStoreWithRevoking<BytesCapsule> {
   @Override
   public boolean has(byte[] key) {
     byte[] lowerCaseKey = getLowerCaseAccountId(key);
-    byte[] value = revokingDB.getUnchecked(lowerCaseKey);
-    return !ArrayUtils.isEmpty(value);
+    return revokingDB.has(lowerCaseKey);
   }
 
 }

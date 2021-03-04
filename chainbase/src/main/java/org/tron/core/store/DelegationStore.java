@@ -10,10 +10,11 @@ import org.tron.common.utils.ByteArray;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 @Slf4j
 @Component
-public class DelegationStore extends TronStoreWithRevoking<BytesCapsule> {
+public class DelegationStore extends TronStoreWithRevoking<BytesCapsule, Protocol.ByteArray> {
 
   public static final long REMARK = -1L;
   public static final int DEFAULT_BROKERAGE = 20;
@@ -25,8 +26,11 @@ public class DelegationStore extends TronStoreWithRevoking<BytesCapsule> {
 
   @Override
   public BytesCapsule get(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
-    return ArrayUtils.isEmpty(value) ? null : new BytesCapsule(value);
+    Protocol.ByteArray value = revokingDB.getUnchecked(key);
+    return value == null
+        || value == Protocol.ByteArray.getDefaultInstance()
+        || value.getData().isEmpty()
+        ? null : new BytesCapsule(value);
   }
 
   public void addReward(long cycle, byte[] address, long value) {

@@ -10,9 +10,10 @@ import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.BlockCapsule.BlockId;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.exception.ItemNotFoundException;
+import org.tron.protos.Protocol;
 
 @Component
-public class BlockIndexStore extends TronStoreWithRevoking<BytesCapsule> {
+public class BlockIndexStore extends TronStoreWithRevoking<BytesCapsule, Protocol.ByteArray> {
 
 
   @Autowired
@@ -37,8 +38,10 @@ public class BlockIndexStore extends TronStoreWithRevoking<BytesCapsule> {
   @Override
   public BytesCapsule get(byte[] key)
       throws ItemNotFoundException {
-    byte[] value = revokingDB.getUnchecked(key);
-    if (ArrayUtils.isEmpty(value)) {
+    Protocol.ByteArray value = revokingDB.getUnchecked(key);
+    if (value == null
+        || value == Protocol.ByteArray.getDefaultInstance()
+        || value.getData().isEmpty()) {
       throw new ItemNotFoundException("number: " + Arrays.toString(key) + " is not found!");
     }
     return new BytesCapsule(value);

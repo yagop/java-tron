@@ -5,9 +5,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.exception.ItemNotFoundException;
+import org.tron.protos.Protocol;
 
 @Component
-public class RecentBlockStore extends TronStoreWithRevoking<BytesCapsule> {
+public class RecentBlockStore extends TronStoreWithRevoking<BytesCapsule, Protocol.ByteArray> {
 
   @Autowired
   private RecentBlockStore(@Value("recent-block") String dbName) {
@@ -16,7 +17,7 @@ public class RecentBlockStore extends TronStoreWithRevoking<BytesCapsule> {
 
   @Override
   public BytesCapsule get(byte[] key) throws ItemNotFoundException {
-    byte[] value = revokingDB.get(key);
+    Protocol.ByteArray value = revokingDB.get(key);
 
     return new BytesCapsule(value);
   }

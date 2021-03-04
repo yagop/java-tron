@@ -17,10 +17,11 @@ import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.config.Parameter;
 import org.tron.core.config.Parameter.ChainConstant;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 @Slf4j(topic = "DB")
 @Component
-public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> {
+public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule, Protocol.ByteArray> {
 
   private static final byte[] LATEST_BLOCK_HEADER_TIMESTAMP = "latest_block_header_timestamp"
       .getBytes();
@@ -2032,13 +2033,13 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   public byte[] statsByVersion(int version) {
     String statsKey = FORK_PREFIX + version;
-    return revokingDB.getUnchecked(statsKey.getBytes());
+    return revokingDB.getUnchecked(statsKey.getBytes()).getData().toByteArray();
   }
 
   public Boolean getForked(int version) {
     String forkKey = FORK_CONTROLLER + version;
-    byte[] value = revokingDB.getUnchecked(forkKey.getBytes());
-    return value == null ? null : Boolean.valueOf(new String(value));
+    Protocol.ByteArray value = revokingDB.getUnchecked(forkKey.getBytes());
+    return value == null ? null : Boolean.valueOf(new String(value.getData().toByteArray()));
   }
 
   /**

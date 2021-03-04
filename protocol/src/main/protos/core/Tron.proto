@@ -846,3 +846,7 @@ message PBFTCommitResult {
 message SRL {
   repeated bytes srAddress = 1;
 }
+
+message ByteArray {
+  bytes data = 1;
+}

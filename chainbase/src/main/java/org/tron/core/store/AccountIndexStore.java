@@ -9,9 +9,10 @@ import org.springframework.stereotype.Component;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
+import org.tron.protos.Protocol;
 
 @Component
-public class AccountIndexStore extends TronStoreWithRevoking<BytesCapsule> {
+public class AccountIndexStore extends TronStoreWithRevoking<BytesCapsule, Protocol.ByteArray> {
 
   @Autowired
   public AccountIndexStore(@Value("account-index") String dbName) {
@@ -33,8 +34,10 @@ public class AccountIndexStore extends TronStoreWithRevoking<BytesCapsule> {
 
   @Override
   public BytesCapsule get(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
-    if (ArrayUtils.isEmpty(value)) {
+    Protocol.ByteArray value = revokingDB.getUnchecked(key);
+    if (value == null
+        || value == Protocol.ByteArray.getDefaultInstance()
+        || value.getData().isEmpty()) {
       return null;
     }
     return new BytesCapsule(value);
@@ -42,7 +45,6 @@ public class AccountIndexStore extends TronStoreWithRevoking<BytesCapsule> {
 
   @Override
   public boolean has(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
-    return !ArrayUtils.isEmpty(value);
+    return revokingDB.has(key);
   }
 }

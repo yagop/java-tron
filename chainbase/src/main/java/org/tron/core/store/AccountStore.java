@@ -17,13 +17,14 @@ import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
 import org.tron.core.db.accountstate.AccountStateCallBackUtils;
+import org.tron.protos.Protocol;
 import org.tron.protos.contract.BalanceContract;
 import org.tron.protos.contract.BalanceContract.TransactionBalanceTrace;
 import org.tron.protos.contract.BalanceContract.TransactionBalanceTrace.Operation;
 
 @Slf4j(topic = "DB")
 @Component
-public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
+public class AccountStore extends TronStoreWithRevoking<AccountCapsule, Protocol.Account> {
 
   private static Map<String, byte[]> assertsAddress = new HashMap<>(); // key = name , value = address
 
@@ -53,8 +54,9 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
 
   @Override
   public AccountCapsule get(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
-    return ArrayUtils.isEmpty(value) ? null : new AccountCapsule(value);
+    Protocol.Account value = revokingDB.getUnchecked(key);
+    return value == null || value == Protocol.Account.getDefaultInstance()
+        ? null : new AccountCapsule(value);
   }
 
   @Override
