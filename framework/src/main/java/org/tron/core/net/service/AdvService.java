@@ -239,7 +239,7 @@ public class AdvService {
     long now = System.currentTimeMillis();
     invToFetch.forEach((item, time) -> {
       if (time < now - MSG_CACHE_DURATION_IN_BLOCKS * BLOCK_PRODUCED_INTERVAL) {
-        String localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()),
+        String localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(time),
             TimeZone.getDefault().toZoneId()).format(DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss"));
         logger.info("This obj is too late to fetch, type: {} hash: {}. time: {} {}", item.getType(),
             item.getHash(), time, localDateTime);
@@ -248,9 +248,15 @@ public class AdvService {
         return;
       }
 
-      logger.info("middle invToFetch size:{}", invToFetch.size());
+      peers.stream()
+          .peek(p -> {
+            if (p.getAdvInvReceive().getIfPresent(item) == null) {
+              logger.info("consumerInvToFetch trx id:{}, time: {}", item.getHash(), item.getTime());
+            }
 
-      peers.stream().filter(peer -> peer.getAdvInvReceive().getIfPresent(item) != null
+            logger.info("consumerInvToFetch peer:{}, size: {}", p, invSender.getSize(p));
+          })
+          .filter(peer -> peer.getAdvInvReceive().getIfPresent(item) != null
           && invSender.getSize(peer) < MAX_TRX_FETCH_PER_PEER)
           .sorted(Comparator.comparingInt(peer -> invSender.getSize(peer)))
           .findFirst().ifPresent(peer -> {
