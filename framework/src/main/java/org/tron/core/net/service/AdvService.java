@@ -254,7 +254,9 @@ public class AdvService {
               logger.info("consumerInvToFetch trx id:{}, time: {}", item.getHash(), item.getTime());
             }
 
-            logger.info("consumerInvToFetch peer:{}, size: {}", p, invSender.getSize(p));
+            if (invSender.getSize(p) >= MAX_TRX_FETCH_PER_PEER) {
+              logger.info("consumerInvToFetch peer:{}, size: {}", p, invSender.getSize(p));
+            }
           })
           .filter(peer -> peer.getAdvInvReceive().getIfPresent(item) != null
           && invSender.getSize(peer) < MAX_TRX_FETCH_PER_PEER)
