@@ -4,6 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
+import org.rocksdb.RocksDB;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
@@ -20,9 +21,13 @@ import org.tron.core.services.interfaceOnPBFT.http.PBFT.HttpApiOnPBFTService;
 import org.tron.core.services.interfaceOnSolidity.RpcApiServiceOnSolidity;
 import org.tron.core.services.interfaceOnSolidity.http.solidity.HttpApiOnSolidityService;
 import org.tron.core.store.AccountAssetIssueStore;
+import org.tron.core.store.AccountStore;
 
 @Slf4j(topic = "app")
 public class FullNode {
+  static {
+    RocksDB.loadLibrary();
+  }
   
   public static final int dbVersion = 2;
 
@@ -62,6 +67,13 @@ public class FullNode {
     } else {
       logger.info("not in debug mode, it will check energy time");
     }
+
+
+    AccountStore accountStore = new AccountStore("account");
+    AccountAssetIssueStore accountAssetIssueStore = new AccountAssetIssueStore("account-asset-issue");
+    accountAssetIssueStore.setAccountStore(accountStore);
+    accountAssetIssueStore.convertAccountAssert();
+    System.exit(0);
 
     DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
     beanFactory.setAllowCircularReferences(false);

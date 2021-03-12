@@ -37,7 +37,7 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
   private AccountTraceStore accountTraceStore;
 
   @Autowired
-  private AccountStore(@Value("account") String dbName) {
+  public AccountStore(@Value("account") String dbName) {
     super(dbName);
   }
 

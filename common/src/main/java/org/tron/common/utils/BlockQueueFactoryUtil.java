@@ -8,7 +8,7 @@ public class BlockQueueFactoryUtil<T> {
 
     public static synchronized BlockingQueue getInstance() {
         if (null == queue) {
-            queue = getInstance(20000);
+            queue = getInstance(20_000_000);
         }
         return queue;
     }
