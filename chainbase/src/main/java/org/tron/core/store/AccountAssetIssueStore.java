@@ -208,23 +208,27 @@ public class AccountAssetIssueStore extends TronStoreWithRevoking<AccountAssetIs
     }
 
     public void convert() {
+      logger.info("convert()");
       ExecutorService writeExecutor = Executors.newFixedThreadPool(ThreadPoolUtil.getMaxPoolSize());
       writeCost.set(System.currentTimeMillis());
       for (int i = 0; i < ThreadPoolUtil.getMaxPoolSize(); i++) {
         Future<?> future = writeExecutor.submit(() -> {
           try {
             while (true) {
+              logger.info("convertQueue.poll()");
               Map.Entry<byte[], byte[]> accountEntry = convertQueue.poll();
               if (readFinish.get() && accountEntry == null) {
+                logger.info("readFinish.get() && accountEntry == null");
                 break;
               }
-
               if (accountEntry == null) {
+                logger.info("accountEntry == null");
                 TimeUnit.MILLISECONDS.sleep(5);
                 continue;
               }
 
               if (accountAssetIssueStore.has(accountEntry.getKey())) {
+                logger.info("accountAssetIssueStore.has(accountEntry.getKey())");
                 continue;
               }
 
@@ -262,6 +266,9 @@ public class AccountAssetIssueStore extends TronStoreWithRevoking<AccountAssetIs
 
               //set VotePower
               accountCapsule.setVotePower413(accountCapsule.getTronPower());
+
+              logger.info("VotePower413_1:"+accountCapsule.getTronPower());
+              logger.info("VotePower413_2:"+accountCapsule.getVotePower413());
 
               accountStore.put(address, accountCapsule);
               writeCount.incrementAndGet();
