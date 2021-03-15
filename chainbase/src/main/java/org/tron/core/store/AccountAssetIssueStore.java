@@ -182,6 +182,7 @@ public class AccountAssetIssueStore extends TronStoreWithRevoking<AccountAssetIs
       new Thread(() -> {
         long start = System.currentTimeMillis();
         for (Map.Entry<byte[], byte[]> accountRecord : revokingDB) {
+          logger.info("put(accountRecord)");
           put(accountRecord);
           readCount.incrementAndGet();
         }
