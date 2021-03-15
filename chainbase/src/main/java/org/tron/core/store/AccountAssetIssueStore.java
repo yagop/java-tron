@@ -29,6 +29,7 @@ import org.tron.common.parameter.CommonParameter;
 import org.tron.common.utils.BlockQueueFactoryUtil;
 import org.tron.common.utils.Commons;
 import org.tron.common.utils.FileUtil;
+import org.tron.common.utils.StringUtil;
 import org.tron.common.utils.ThreadPoolUtil;
 import org.tron.core.capsule.AccountAssetIssueCapsule;
 import org.tron.core.capsule.AccountCapsule;
@@ -229,10 +230,13 @@ public class AccountAssetIssueStore extends TronStoreWithRevoking<AccountAssetIs
                 continue;
               }
 
+              logger.info("begin 1 convert account {}", StringUtil.encode58Check(accountEntry.getKey()));
               if (accountAssetIssueStore.has(accountEntry.getKey())) {
                 logger.info("accountAssetIssueStore.has(accountEntry.getKey())");
                 continue;
               }
+
+              logger.info("begin 2 convert account {}", StringUtil.encode58Check(accountEntry.getKey()));
 
               AccountCapsule accountCapsule = new AccountCapsule(accountEntry.getValue());
               byte[] address = accountCapsule.getAddress().toByteArray();
@@ -273,6 +277,13 @@ public class AccountAssetIssueStore extends TronStoreWithRevoking<AccountAssetIs
               logger.info("VotePower413_2:"+accountCapsule.getVotePower413());
 
               accountStore.put(address, accountCapsule);
+
+              logger.info("convert account {} {} {} {}",
+                  StringUtil.encode58Check(accountCapsule.getAddress().toByteArray()),
+                  accountCapsule.getVotePower413(),
+                  accountStore.get(accountCapsule.getAddress().toByteArray()).getVotePower413(),
+                  accountCapsule.getTronPower()
+                  );
               writeCount.incrementAndGet();
 
             }
@@ -291,6 +302,7 @@ public class AccountAssetIssueStore extends TronStoreWithRevoking<AccountAssetIs
           future.get();
         } catch (InterruptedException | ExecutionException e) {
           logger.error(e.getMessage(), e);
+          Thread.currentThread().interrupt();
         }
       }
       writeCost.set(System.currentTimeMillis() - writeCost.get());
