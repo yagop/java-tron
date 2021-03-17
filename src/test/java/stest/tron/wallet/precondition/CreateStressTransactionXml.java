@@ -47,7 +47,9 @@ public class CreateStressTransactionXml {
       "ShieldSendToken(P2S)",
       "marketSell",
       "TriggerJustlink",
-      "TriggerJustswap"
+      "TriggerJustswap",
+      "TriggerJustLendRedeem",
+      "TriggerJustLendBorrow"
   };
 
   @BeforeClass
