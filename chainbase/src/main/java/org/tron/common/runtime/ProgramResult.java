@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
-import org.spongycastle.util.encoders.Hex;
+import org.apache.commons.lang3.tuple.Pair;
 import org.tron.common.logsfilter.trigger.ContractTrigger;
 import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.runtime.vm.LogInfo;
@@ -33,7 +33,8 @@ public class ProgramResult {
 
   private Set<DataWord> deleteAccounts;
   private Set<DataWord> deleteVotes;
-  private Set<DataWord> deleteDelegation;
+  //  private Set<DataWord> deleteDelegation;
+  private Set<Pair<DataWord, DataWord>> deleteDelegation;
   private ByteArraySet touchedAccounts = new ByteArraySet();
   private List<InternalTransaction> internalTransactions;
   private List<LogInfo> logInfoList;
@@ -134,7 +135,7 @@ public class ProgramResult {
     return deleteVotes;
   }
 
-  public Set<DataWord> getDeleteDelegation() {
+  public Set<Pair<DataWord, DataWord>> getDeleteDelegation() {
     if (deleteDelegation == null) {
       deleteDelegation = new HashSet<>();
     }
@@ -149,7 +150,7 @@ public class ProgramResult {
     getDeleteVotes().add(address);
   }
 
-  public void addDeleteDelegation(DataWord address) {
+  public void addDeleteDelegation(Pair<DataWord, DataWord> address) {
     getDeleteDelegation().add(address);
   }
 
@@ -165,7 +166,7 @@ public class ProgramResult {
     }
   }
 
-  public void addDeleteDelegationSet(Set<DataWord> addresses) {
+  public void addDeleteDelegationSet(Set<Pair<DataWord, DataWord>> addresses) {
     if (!isEmpty(addresses)) {
       getDeleteDelegation().addAll(addresses);
     }

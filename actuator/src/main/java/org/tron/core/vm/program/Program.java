@@ -18,7 +18,28 @@
 
 package org.tron.core.vm.program;
 
+import static java.lang.StrictMath.min;
+import static java.lang.String.format;
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_BYTE_ARRAY;
+import static org.apache.commons.lang3.ArrayUtils.getLength;
+import static org.apache.commons.lang3.ArrayUtils.isEmpty;
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
+import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
+import static org.tron.common.utils.ByteUtil.stripLeadingZeroes;
+import static org.tron.core.config.Parameter.ChainConstant.TRX_PRECISION;
+
 import com.google.protobuf.ByteString;
+import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,19 +49,47 @@ import org.tron.common.parameter.CommonParameter;
 import org.tron.common.runtime.InternalTransaction;
 import org.tron.common.runtime.ProgramResult;
 import org.tron.common.runtime.vm.DataWord;
-import org.tron.common.utils.*;
-import org.tron.core.capsule.*;
+import org.tron.common.utils.BIUtil;
+import org.tron.common.utils.ByteUtil;
+import org.tron.common.utils.FastByteComparisons;
+import org.tron.common.utils.Utils;
+import org.tron.common.utils.WalletUtil;
+import org.tron.core.capsule.AccountAssetIssueCapsule;
+import org.tron.core.capsule.AccountCapsule;
+import org.tron.core.capsule.BlockCapsule;
+import org.tron.core.capsule.ContractCapsule;
+import org.tron.core.capsule.DelegatedResourceAccountIndexCapsule;
+import org.tron.core.capsule.DelegatedResourceCapsule;
+import org.tron.core.capsule.WitnessCapsule;
 import org.tron.core.config.Parameter;
 import org.tron.core.db.TransactionTrace;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
 import org.tron.core.exception.TronException;
-import org.tron.core.store.DynamicPropertiesStore;
 import org.tron.core.utils.TransactionUtil;
-import org.tron.core.vm.*;
+import org.tron.core.vm.EnergyCost;
+import org.tron.core.vm.MessageCall;
+import org.tron.core.vm.OpCode;
+import org.tron.core.vm.PrecompiledContracts;
+import org.tron.core.vm.VM;
+import org.tron.core.vm.VMConstant;
+import org.tron.core.vm.VMUtils;
 import org.tron.core.vm.config.VMConfig;
-import org.tron.core.vm.nativecontract.*;
-import org.tron.core.vm.nativecontract.param.*;
+import org.tron.core.vm.nativecontract.ContractService;
+import org.tron.core.vm.nativecontract.FreezeBalanceProcessor;
+import org.tron.core.vm.nativecontract.StakeProcessor;
+import org.tron.core.vm.nativecontract.TokenIssueProcessor;
+import org.tron.core.vm.nativecontract.UnfreezeBalanceProcessor;
+import org.tron.core.vm.nativecontract.UnstakeProcessor;
+import org.tron.core.vm.nativecontract.UpdateAssetProcessor;
+import org.tron.core.vm.nativecontract.WithdrawRewardProcessor;
+import org.tron.core.vm.nativecontract.param.FreezeBalanceParam;
+import org.tron.core.vm.nativecontract.param.StakeParam;
+import org.tron.core.vm.nativecontract.param.TokenIssueParam;
+import org.tron.core.vm.nativecontract.param.UnfreezeBalanceParam;
+import org.tron.core.vm.nativecontract.param.UnstakeParam;
+import org.tron.core.vm.nativecontract.param.UpdateAssetParam;
+import org.tron.core.vm.nativecontract.param.WithdrawRewardParam;
 import org.tron.core.vm.program.invoke.ProgramInvoke;
 import org.tron.core.vm.program.invoke.ProgramInvokeFactory;
 import org.tron.core.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -56,17 +105,6 @@ import org.tron.protos.Protocol.AccountType;
 import org.tron.protos.contract.Common;
 import org.tron.protos.contract.SmartContractOuterClass.SmartContract;
 import org.tron.protos.contract.SmartContractOuterClass.SmartContract.Builder;
-
-import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.lang.StrictMath.min;
-import static java.lang.String.format;
-import static org.apache.commons.lang3.ArrayUtils.*;
-import static org.tron.common.utils.ByteUtil.stripLeadingZeroes;
-import static org.tron.core.config.Parameter.ChainConstant.TRX_PRECISION;
 
 /**
  * @author Roman Mandeleil
@@ -297,7 +335,7 @@ public class Program {
 
   /**
    * @param transferAddress the address send TRX to.
-   * @param value the TRX value transferred in the internal transaction
+   * @param value           the TRX value transferred in the internal transaction
    */
   private InternalTransaction addInternalTx(DataWord energyLimit, byte[] senderAddress,
       byte[] transferAddress,
@@ -464,9 +502,9 @@ public class Program {
   /**
    * . Allocates a piece of memory and stores value at given offset address
    *
-   * @param addr is the offset address
+   * @param addr      is the offset address
    * @param allocSize size of memory needed to write
-   * @param value the data to write to memory
+   * @param value     the data to write to memory
    */
   public void memorySave(int addr, int allocSize, byte[] value) {
     memory.extendAndWrite(addr, allocSize, value);
@@ -498,7 +536,7 @@ public class Program {
    * . Allocates extra memory in the program for a specified size, calculated from a given offset
    *
    * @param offset the memory address offset
-   * @param size the number of bytes to allocate
+   * @param size   the number of bytes to allocate
    */
   public void allocateMemory(int offset, int size) {
     memory.extend(offset, size);
@@ -545,24 +583,25 @@ public class Program {
         throw new BytecodeExecutionException("transfer failure");
       }
     }
-    if (VMConfig.allowTvmFreeze()) {
-      byte[] blackHoleAddress = getContractState().getBlackHoleAddress();
-      if (FastByteComparisons.isEqual(owner, obtainer)
-          || FastByteComparisons.isEqual(obtainer, blackHoleAddress)) {
-        transferDelegatedResourceToBlackHole(owner, blackHoleAddress, getContractState());
-      } else {
-        transferDelegatedResourceToInheritor(owner, obtainer, getContractState());
-      }
-      getResult().addDeleteDelegation(this.getContractAddress());
-    }
-    getResult().addDeleteAccount(this.getContractAddress());
+//    if (VMConfig.allowTvmFreeze()) {
+//      byte[] blackHoleAddress = getContractState().getBlackHoleAddress();
+//      if (FastByteComparisons.isEqual(owner, obtainer)
+//          || FastByteComparisons.isEqual(obtainer, blackHoleAddress)) {
+//        transferDelegatedResourceToBlackHole(owner, blackHoleAddress, getContractState());
+//      } else {
+//        transferDelegatedResourceToInheritor(owner, obtainer, getContractState());
+//      }
+//    }
+    getResult().addDeleteDelegation(Pair.of(this.getContractAddress(), obtainerAddress));
+//    getResult().addDeleteAccount(this.getContractAddress());
   }
 
   public Repository getContractState() {
     return this.contractState;
   }
 
-  private void transferDelegatedResourceToBlackHole(byte[] ownerAddr, byte[] blackHoleAddr, Repository repo) {
+  private void transferDelegatedResourceToBlackHole(byte[] ownerAddr, byte[] blackHoleAddr,
+      Repository repo) {
 
     // delegated resource from sender to owner, just abandon
     // in order to making that sender can unfreeze their balance in future
@@ -570,7 +609,8 @@ public class Program {
 
     // process delegated resource from owner to receiver
     long totalDelegatedFrozenBalance = 0;
-    DelegatedResourceAccountIndexCapsule indexCapsule = repo.getDelegatedResourceAccountIndex(ownerAddr);
+    DelegatedResourceAccountIndexCapsule indexCapsule = repo
+        .getDelegatedResourceAccountIndex(ownerAddr);
     for (ByteString receiver : indexCapsule.getToAccountsList()) {
       byte[] receiverAddr = receiver.toByteArray();
       byte[] key = DelegatedResourceCapsule.createDbKey(ownerAddr, receiverAddr);
@@ -595,7 +635,8 @@ public class Program {
       repo.updateAccount(receiverCapsule.createDbKey(), receiverCapsule);
 
       // remove delegated resource index in receiver`s fromList
-      removeOrInsertDelegatedIndexAndUpdate(receiverAddr, ownerAddr, null, ListType.FROM_LIST, repo);
+      removeOrInsertDelegatedIndexAndUpdate(receiverAddr, ownerAddr, null, ListType.FROM_LIST,
+          repo);
 
       // set delegated resource to zero
       delegatedResourceCapsule.setFrozenBalanceForBandwidth(0, 0);
@@ -626,16 +667,18 @@ public class Program {
 
     // transfer all kinds of frozen balance to BlackHole
     repo.addBalance(blackHoleAddr, totalDelegatedFrozenBalance
-            + frozenBalanceForBandwidthOfOwner
-            + frozenBalanceForEnergyOfOwner);
+        + frozenBalanceForBandwidthOfOwner
+        + frozenBalanceForEnergyOfOwner);
   }
 
-  private void transferDelegatedResourceToInheritor(byte[] ownerAddr, byte[] inheritorAddr, Repository repo) {
+  private void transferDelegatedResourceToInheritor(byte[] ownerAddr, byte[] inheritorAddr,
+      Repository repo) {
     AccountCapsule inheritorCapsule = repo.getAccount(inheritorAddr);
-    DelegatedResourceAccountIndexCapsule indexCapsule = repo.getDelegatedResourceAccountIndex(ownerAddr);
+    DelegatedResourceAccountIndexCapsule indexCapsule = repo
+        .getDelegatedResourceAccountIndex(ownerAddr);
 
     // process delegated resource from sender to owner
-    for(ByteString sender : indexCapsule.getFromAccountsList()) {
+    for (ByteString sender : indexCapsule.getFromAccountsList()) {
       byte[] senderAddr = sender.toByteArray();
 
       // if sender == inheritor, just abandon this part of resource and do nothing
@@ -647,11 +690,12 @@ public class Program {
       DelegatedResourceCapsule senderToOwnerRes = repo.getDelegatedResource(senderToOwnerKey);
 
       byte[] senderToInheritorKey = DelegatedResourceCapsule.createDbKey(senderAddr, inheritorAddr);
-      DelegatedResourceCapsule senderToInheritorRes = repo.getDelegatedResource(senderToInheritorKey);
+      DelegatedResourceCapsule senderToInheritorRes = repo
+          .getDelegatedResource(senderToInheritorKey);
 
       /* process delegated resource from sender to inheritor */
       // create a new sender->inheritor delegated resource
-      if(senderToInheritorRes == null) {
+      if (senderToInheritorRes == null) {
         senderToInheritorRes = new DelegatedResourceCapsule(
             ByteString.copyFrom(senderAddr),
             ByteString.copyFrom(inheritorAddr));
@@ -690,10 +734,12 @@ public class Program {
           senderToOwnerRes.getFrozenBalanceForEnergy());
 
       // update delegated resource index for sender`s toList
-      removeOrInsertDelegatedIndexAndUpdate(senderAddr, ownerAddr, inheritorAddr, ListType.TO_LIST, repo);
+      removeOrInsertDelegatedIndexAndUpdate(senderAddr, ownerAddr, inheritorAddr, ListType.TO_LIST,
+          repo);
 
       // update delegated resource index for inheritor`s fromList
-      removeOrInsertDelegatedIndexAndUpdate(inheritorAddr, null, senderAddr, ListType.FROM_LIST, repo);
+      removeOrInsertDelegatedIndexAndUpdate(inheritorAddr, null, senderAddr, ListType.FROM_LIST,
+          repo);
 
       // set sender->owner delegated resource to zero
       senderToOwnerRes.setFrozenBalanceForBandwidth(0, 0);
@@ -702,7 +748,7 @@ public class Program {
     }
 
     // process delegated resource from owner to receiver
-    for(ByteString receiver : indexCapsule.getToAccountsList()){
+    for (ByteString receiver : indexCapsule.getToAccountsList()) {
       byte[] receiverAddr = receiver.toByteArray();
       byte[] ownerToReceiverKey = DelegatedResourceCapsule.createDbKey(ownerAddr, receiverAddr);
       DelegatedResourceCapsule ownerToReceiverRes = repo.getDelegatedResource(ownerToReceiverKey);
@@ -760,17 +806,21 @@ public class Program {
 
         /* process delegated resource account index */
         // remove delegated resource index for owner`s toList
-        removeOrInsertDelegatedIndexAndUpdate(ownerAddr, receiverAddr, null, ListType.TO_LIST, repo);
+        removeOrInsertDelegatedIndexAndUpdate(ownerAddr, receiverAddr, null, ListType.TO_LIST,
+            repo);
 
         // remove delegated resource index for receiver`s fromList
-        removeOrInsertDelegatedIndexAndUpdate(receiverAddr, ownerAddr, null, ListType.FROM_LIST, repo);
+        removeOrInsertDelegatedIndexAndUpdate(receiverAddr, ownerAddr, null, ListType.FROM_LIST,
+            repo);
       } else {
-        byte[] inheritorToReceiverKey = DelegatedResourceCapsule.createDbKey(inheritorAddr, receiverAddr);
-        DelegatedResourceCapsule inheritorToReceiverRes = repo.getDelegatedResource(inheritorToReceiverKey);
+        byte[] inheritorToReceiverKey = DelegatedResourceCapsule
+            .createDbKey(inheritorAddr, receiverAddr);
+        DelegatedResourceCapsule inheritorToReceiverRes = repo
+            .getDelegatedResource(inheritorToReceiverKey);
 
         /* process delegated resource from inheritor to receiver */
         // create a new inheritor->receiver delegated resource
-        if(inheritorToReceiverRes == null) {
+        if (inheritorToReceiverRes == null) {
           inheritorToReceiverRes = new DelegatedResourceCapsule(
               ByteString.copyFrom(inheritorAddr),
               ByteString.copyFrom(receiverAddr));
@@ -810,10 +860,12 @@ public class Program {
 
         /* process delegated resource account index */
         // update delegated resource index for receiver`s fromList
-        removeOrInsertDelegatedIndexAndUpdate(receiverAddr, ownerAddr, inheritorAddr, ListType.FROM_LIST, repo);
+        removeOrInsertDelegatedIndexAndUpdate(receiverAddr, ownerAddr, inheritorAddr,
+            ListType.FROM_LIST, repo);
 
         // update delegated resource index for inheritor`s toList
-        removeOrInsertDelegatedIndexAndUpdate(inheritorAddr, null, receiverAddr, ListType.TO_LIST, repo);
+        removeOrInsertDelegatedIndexAndUpdate(inheritorAddr, null, receiverAddr, ListType.TO_LIST,
+            repo);
       }
 
       // set owner->receiver delegated resource to zero
@@ -841,7 +893,8 @@ public class Program {
     long expireTimeForBandwidthOfInheritor = 0;
     // check if frozen for bandwidth exists
     if (inheritorCapsule.getFrozenCount() != 0) {
-      frozenBalanceForBandwidthOfInheritor = inheritorCapsule.getFrozenList().get(0).getFrozenBalance();
+      frozenBalanceForBandwidthOfInheritor = inheritorCapsule.getFrozenList().get(0)
+          .getFrozenBalance();
       expireTimeForBandwidthOfInheritor = inheritorCapsule.getFrozenList().get(0).getExpireTime();
     }
     if (frozenBalanceForBandwidthOfOwner != 0) { // for non-zero bandwidth
@@ -901,9 +954,11 @@ public class Program {
   }
 
   // TODO: 2021/3/19 即使取cache也会发生反序列化，对性能的影响，某些index capsule可以待处理完毕后再写入缓存
-  private void removeOrInsertDelegatedIndexAndUpdate(byte[] accountAddr, byte[] removeAddr, byte[] insertAddr,
-                                                     ListType listType, Repository repo) {
-    DelegatedResourceAccountIndexCapsule indexCapsule = repo.getDelegatedResourceAccountIndex(accountAddr);
+  private void removeOrInsertDelegatedIndexAndUpdate(byte[] accountAddr, byte[] removeAddr,
+      byte[] insertAddr,
+      ListType listType, Repository repo) {
+    DelegatedResourceAccountIndexCapsule indexCapsule = repo
+        .getDelegatedResourceAccountIndex(accountAddr);
     if (indexCapsule == null) {
       indexCapsule = new DelegatedResourceAccountIndexCapsule(ByteString.copyFrom(accountAddr));
     }
@@ -931,11 +986,16 @@ public class Program {
       long addedExpireTime,
       Repository repo) {
     long now = getTimestamp().longValue() * 1000;
-    long maxExpire = repo.getDynamicPropertiesStore().getMinFrozenTime() * Parameter.ChainConstant.FROZEN_PERIOD;
+    long maxExpire =
+        repo.getDynamicPropertiesStore().getMinFrozenTime() * Parameter.ChainConstant.FROZEN_PERIOD;
 
-    if (originFrozenBalance == 0) return addedExpireTime;
+    if (originFrozenBalance == 0) {
+      return addedExpireTime;
+    }
 
-    if (addedFrozenBalance == 0) return originExpireTime;
+    if (addedFrozenBalance == 0) {
+      return originExpireTime;
+    }
 
     return now +
         BigInteger.valueOf(Math.max(0, Math.min(originExpireTime - now, maxExpire)))
@@ -997,7 +1057,8 @@ public class Program {
         deposit.updateAccount(newAddress, existingAccount);
       }
 
-      AccountAssetIssueCapsule accountAssetIssue = getContractState().getAccountAssetIssue(newAddress);
+      AccountAssetIssueCapsule accountAssetIssue = getContractState()
+          .getAccountAssetIssue(newAddress);
       if (accountAssetIssue == null) {
         deposit.createAccountAssetIssue(newAddress);
       } else {
@@ -1475,7 +1536,8 @@ public class Program {
   public DataWord getRewardBalance(DataWord address) {
     ContractService contractService = ContractService.getInstance();
     long rewardBalance = contractService
-            .queryReward(TransactionTrace.convertToTronAddress(address.getLast20Bytes()), getContractState());
+        .queryReward(TransactionTrace.convertToTronAddress(address.getLast20Bytes()),
+            getContractState());
     return new DataWord(rewardBalance);
   }
 
@@ -1487,7 +1549,7 @@ public class Program {
 
   public DataWord isSRCandidate(DataWord address) {
     WitnessCapsule witnessCapsule = getContractState()
-            .getWitnessCapsule(TransactionTrace.convertToTronAddress(address.getLast20Bytes()));
+        .getWitnessCapsule(TransactionTrace.convertToTronAddress(address.getLast20Bytes()));
     return witnessCapsule != null ? new DataWord(1) : new DataWord(0);
   }
 
@@ -1503,6 +1565,7 @@ public class Program {
     return new DataWord(Hex.toHexString(getContractState()
         .getBlockByNum(0).getBlockId().getBytes()));
   }
+
   public DataWord getDropPrice() {
     return new DataWord(1);
   }
@@ -1732,7 +1795,7 @@ public class Program {
 
   public void createContract2(DataWord value, DataWord memStart, DataWord memSize, DataWord salt) {
     byte[] senderAddress;
-    if(VMConfig.allowTvmIstanbul()) {
+    if (VMConfig.allowTvmIstanbul()) {
       senderAddress = TransactionTrace
           .convertToTronAddress(this.getContractAddress().getLast20Bytes());
     } else {
@@ -2031,7 +2094,8 @@ public class Program {
     FreezeBalanceParam param = new FreezeBalanceParam();
     byte[] owner = TransactionTrace.convertToTronAddress(getContractAddress().getLast20Bytes());
     param.setOwnerAddress(owner);
-    param.setReceiverAddress(TransactionTrace.convertToTronAddress(receiverAddress.getLast20Bytes()));
+    param.setReceiverAddress(
+        TransactionTrace.convertToTronAddress(receiverAddress.getLast20Bytes()));
     param.setFrozenDuration(repository.getDynamicPropertiesStore().getMinFrozenTime());
     param.setResourceType(parseResourceCode(resourceType));
     try {
@@ -2056,7 +2120,8 @@ public class Program {
     UnfreezeBalanceParam param = new UnfreezeBalanceParam();
     byte[] owner = TransactionTrace.convertToTronAddress(getContractAddress().getLast20Bytes());
     param.setOwnerAddress(owner);
-    param.setReceiverAddress(TransactionTrace.convertToTronAddress(receiverAddress.getLast20Bytes()));
+    param.setReceiverAddress(
+        TransactionTrace.convertToTronAddress(receiverAddress.getLast20Bytes()));
     param.setResourceType(parseResourceCode(resourceType));
     try {
       processor.validate(param, repository);
@@ -2090,7 +2155,8 @@ public class Program {
       }
     } else {
       byte[] key = DelegatedResourceCapsule.createDbKey(owner, target);
-      DelegatedResourceCapsule delegatedResourceCapsule = getContractState().getDelegatedResource(key);
+      DelegatedResourceCapsule delegatedResourceCapsule = getContractState()
+          .getDelegatedResource(key);
       if (delegatedResourceCapsule != null) {
         if (resourceCode == 0) {
           if (delegatedResourceCapsule.getFrozenBalanceForBandwidth() != 0) {
@@ -2164,7 +2230,8 @@ public class Program {
     Repository repository = getContractState().newRepositoryChild();
     WithdrawRewardProcessor withdrawRewardContractProcessor = new WithdrawRewardProcessor();
     WithdrawRewardParam withdrawRewardParam = new WithdrawRewardParam();
-    byte[] ownerAddress = TransactionTrace.convertToTronAddress(getContractAddress().getLast20Bytes());
+    byte[] ownerAddress = TransactionTrace
+        .convertToTronAddress(getContractAddress().getLast20Bytes());
     withdrawRewardParam.setTargetAddress(ownerAddress);
     try {
       withdrawRewardContractProcessor.validate(withdrawRewardParam, repository,
@@ -2181,7 +2248,8 @@ public class Program {
 
   public void tokenIssue(DataWord name, DataWord abbr, DataWord totalSupply, DataWord precision) {
     Repository repository = getContractState().newRepositoryChild();
-    byte[] ownerAddress = TransactionTrace.convertToTronAddress(getContractAddress().getLast20Bytes());
+    byte[] ownerAddress = TransactionTrace
+        .convertToTronAddress(getContractAddress().getLast20Bytes());
     TokenIssueProcessor tokenIssueProcessor = new TokenIssueProcessor();
     TokenIssueParam tokenIssueParam = new TokenIssueParam();
     tokenIssueParam.setName(name.getNoEndZeroesData());
@@ -2202,13 +2270,14 @@ public class Program {
 
   public void updateAsset(DataWord urlDataOffs, DataWord descriptionDataOffs) {
     Repository repository = getContractState().newRepositoryChild();
-    byte[] ownerAddress = TransactionTrace.convertToTronAddress(getContractAddress().getLast20Bytes());
+    byte[] ownerAddress = TransactionTrace
+        .convertToTronAddress(getContractAddress().getLast20Bytes());
     DataWord urlSize = memoryLoad(urlDataOffs);
     DataWord descriptionSize = memoryLoad(descriptionDataOffs);
     byte[] urlData = memoryChunk(urlDataOffs.intValueSafe() + DataWord.WORD_SIZE,
-            urlSize.intValueSafe());
+        urlSize.intValueSafe());
     byte[] descriptionData = memoryChunk(descriptionDataOffs.intValueSafe() + DataWord.WORD_SIZE,
-            descriptionSize.intValueSafe());
+        descriptionSize.intValueSafe());
     UpdateAssetParam updateAssetParam = new UpdateAssetParam();
     updateAssetParam.setOwnerAddress(ownerAddress);
     updateAssetParam.setNewUrl(urlData);
