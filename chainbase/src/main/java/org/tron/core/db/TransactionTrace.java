@@ -259,12 +259,6 @@ public class TransactionTrace {
 
   private void deletedAccountAndResource() throws BalanceInsufficientException {
     if (StringUtils.isEmpty(transactionContext.getProgramResult().getRuntimeError())) {
-      for (DataWord contract : transactionContext.getProgramResult().getDeleteAccounts()) {
-        deleteContract(convertToTronAddress((contract.getLast20Bytes())));
-      }
-      for (DataWord address : transactionContext.getProgramResult().getDeleteVotes()) {
-        votesStore.delete(convertToTronAddress((address.getLast20Bytes())));
-      }
       if (dynamicPropertiesStore.getAllowTvmFreeze() == 1) {
         for (Pair<DataWord, DataWord> addressPair : transactionContext.getProgramResult()
             .getDeleteDelegation()) {
@@ -280,6 +274,12 @@ public class TransactionTrace {
           }
           deleteDelegationByAddress(convertToTronAddress(contract));
         }
+      }
+      for (DataWord contract : transactionContext.getProgramResult().getDeleteAccounts()) {
+        deleteContract(convertToTronAddress((contract.getLast20Bytes())));
+      }
+      for (DataWord address : transactionContext.getProgramResult().getDeleteVotes()) {
+        votesStore.delete(convertToTronAddress((address.getLast20Bytes())));
       }
     }
   }
