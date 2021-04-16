@@ -78,15 +78,6 @@ public class ContractTrcToken001 {
 
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
-    Assert.assertTrue(PublicMethed.freezeBalanceForReceiver(fromAddress,
-        PublicMethed.getFreezeBalanceCount(dev001Address, dev001Key, 130000L, blockingStubFull), 0,
-        1, ByteString.copyFrom(dev001Address), testKey002, blockingStubFull));
-
-    Assert.assertTrue(PublicMethed.freezeBalanceForReceiver(fromAddress, 10_000_000L, 0, 0,
-        ByteString.copyFrom(dev001Address), testKey002, blockingStubFull));
-
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-
     long start = System.currentTimeMillis() + 2000;
     long end = System.currentTimeMillis() + 1000000000;
 
@@ -102,17 +93,12 @@ public class ContractTrcToken001 {
     logger.info("The token name: " + tokenName);
     logger.info("The token ID: " + assetAccountId.toStringUtf8());
 
-    //before deploy, check account resource
-    AccountResourceMessage accountResource = PublicMethed
-        .getAccountResource(dev001Address, blockingStubFull);
-    long energyLimit = accountResource.getEnergyLimit();
-    long energyUsage = accountResource.getEnergyUsed();
+
     long balanceBefore = PublicMethed.queryAccount(dev001Key, blockingStubFull).getBalance();
     Long devAssetCountBefore = PublicMethed
         .getAssetIssueValue(dev001Address, assetAccountId, blockingStubFull);
 
-    logger.info("before energyLimit is " + energyLimit);
-    logger.info("before energyUsage is " + energyUsage);
+
     logger.info("before balanceBefore is " + balanceBefore);
     logger.info("before AssetId: " + assetAccountId.toStringUtf8() + ", devAssetCountBefore: "
         + devAssetCountBefore);
@@ -135,16 +121,9 @@ public class ContractTrcToken001 {
 
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
-    accountResource = PublicMethed.getAccountResource(dev001Address, blockingStubFull);
-    energyLimit = accountResource.getEnergyLimit();
-    energyUsage = accountResource.getEnergyUsed();
-    long balanceAfter = PublicMethed.queryAccount(dev001Key, blockingStubFull).getBalance();
     Long devAssetCountAfter = PublicMethed
         .getAssetIssueValue(dev001Address, assetAccountId, blockingStubFull);
 
-    logger.info("after energyLimit is " + energyLimit);
-    logger.info("after energyUsage is " + energyUsage);
-    logger.info("after balanceAfter is " + balanceAfter);
     logger.info("after AssetId: " + assetAccountId.toStringUtf8() + ", devAssetCountAfter: "
         + devAssetCountAfter);
 

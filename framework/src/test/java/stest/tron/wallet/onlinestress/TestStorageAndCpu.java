@@ -86,8 +86,8 @@ public class TestStorageAndCpu {
 
   @Test(enabled = true,threadPoolSize = 1, invocationCount = 1)
   public void scanBlock() {
-    Long startNum = 26165658L;
-    Long endNum = 26166320L;
+    Long startNum = 29345682L;
+    Long endNum = 29345984L;
     Integer totalNum = 0;
     Integer successNum = 0;
     Integer failedNum = 0;
