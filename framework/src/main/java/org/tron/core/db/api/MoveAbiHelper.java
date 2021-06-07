@@ -35,6 +35,9 @@ public class MoveAbiHelper {
     Iterator<Map.Entry<byte[], ContractCapsule>> it = contractStore.iterator();
     it.forEachRemaining(e -> {
       ContractCapsule contractCapsule = e.getValue();
+      if (e.getValue().getInstance().getAbi().toString().length() != 0) {
+        logger.info("key: "+StringUtil.encode58Check(e.getKey())+" ,still has abi");
+      }
       if (!abiStore.has(e.getKey())) {
         abiStore.put(e.getKey(), new AbiCapsule(contractCapsule));
       }
@@ -60,7 +63,6 @@ public class MoveAbiHelper {
     it.forEachRemaining(co -> {
       String key = StringUtil.encode58Check(co.getKey());
       String res = "key: "+key + "\n value: "+co.getValue().getInstance().getAbi().toString();
-      System.out.println("co_res: "+res);
       File file = new File("/data/databackup/workspace_TRC20/TRON/contractStroe.txt");
       FileWriter writer;
       try {
@@ -83,7 +85,6 @@ public class MoveAbiHelper {
     it.forEachRemaining(ab -> {
       String key = StringUtil.encode58Check(ab.getKey());
       String res = "key: "+key + "\n value: "+ab.getValue().toString();
-      System.out.println("ab_res: "+res);
       File file = new File("/data/databackup/workspace_TRC20/TRON/abiStroe.txt");
       FileWriter writer;
       try {
