@@ -59,7 +59,7 @@ public class MoveAbiHelper {
     Iterator<Map.Entry<byte[], ContractCapsule>> it = contractStore.iterator();
     it.forEachRemaining(co -> {
       String key = StringUtil.encode58Check(co.getKey());
-      String res = "key: "+key + "value: "+co.getValue().toString();
+      String res = "key: "+key + "\n value: "+co.getValue().getInstance().getAbi().toString();
       System.out.println("co_res: "+res);
       File file = new File("/data/databackup/workspace_TRC20/TRON/contractStroe.txt");
       FileWriter writer;
@@ -82,7 +82,7 @@ public class MoveAbiHelper {
     Iterator<Map.Entry<byte[], AbiCapsule>> it = abiStore.iterator();
     it.forEachRemaining(ab -> {
       String key = StringUtil.encode58Check(ab.getKey());
-      String res = "key: "+key + "value: "+ab.getValue().toString();
+      String res = "key: "+key + "\n value: "+ab.getValue().toString();
       System.out.println("ab_res: "+res);
       File file = new File("/data/databackup/workspace_TRC20/TRON/abiStroe.txt");
       FileWriter writer;
