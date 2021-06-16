@@ -271,7 +271,8 @@ public class Manager {
   }
 
   public boolean needToMoveAbi() {
-    return getDynamicPropertiesStore().getAbiMoveDone() == 0L;
+//    return getDynamicPropertiesStore().getAbiMoveDone() == 0L;
+    return true;
   }
 
   public DynamicPropertiesStore getDynamicPropertiesStore() {

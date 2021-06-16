@@ -2577,7 +2577,8 @@ public class Wallet {
     ContractCapsule contractCapsule = chainBaseManager.getContractStore()
         .get(bytesMessage.getValue().toByteArray());
     if (Objects.nonNull(contractCapsule)) {
-      return contractCapsule.getInstance();
+      return contractCapsule.getInstance().toBuilder().setAbi(
+          chainBaseManager.getAbiStore().get(address).getInstance()).build();
     }
     return null;
   }
