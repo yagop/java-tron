@@ -2604,11 +2604,16 @@ public class Wallet {
         .get(bytesMessage.getValue().toByteArray());
     if (Objects.nonNull(contractCapsule)) {
       CodeCapsule codeCapsule = dbManager.getCodeStore().get(bytesMessage.getValue().toByteArray());
-      if (Objects.nonNull(codeCapsule)) {
-        contractCapsule.setRuntimecode(codeCapsule.getData());
-        return contractCapsule.generateWrapper();
-      } else {
-        logger.info("codeStore is null");
+      try{
+        if (Objects.nonNull(codeCapsule)) {
+          contractCapsule.setRuntimecode(codeCapsule.getData());
+          logger.info("codeCapsule.getData(): "+codeCapsule.getData());
+          return contractCapsule.generateWrapper();
+        } else {
+          logger.info("codeStore is null");
+        }
+      }catch (Exception e){
+        logger.error(e.getMessage());
       }
     }
     return null;
