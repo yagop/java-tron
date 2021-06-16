@@ -35,9 +35,8 @@ public class MoveAbiHelper {
     Iterator<Map.Entry<byte[], ContractCapsule>> it = contractStore.iterator();
     it.forEachRemaining(e -> {
       ContractCapsule contractCapsule = e.getValue();
-      if (e.getValue().getInstance().getAbi().toString().length() != 0) {
-        logger.info("key: "+StringUtil.encode58Check(e.getKey())+" ,still has abi");
-      }
+      logger.info("key: "+StringUtil.encode58Check(e.getKey()));
+
       if (!abiStore.has(e.getKey())) {
         abiStore.put(e.getKey(), new AbiCapsule(contractCapsule));
       }
@@ -54,6 +53,7 @@ public class MoveAbiHelper {
     logger.info(
         "Complete the abi move, total time:{} milliseconds",
         System.currentTimeMillis() - start);
+    logger.info("count:"+count);
     batchAbiStore();
   }
 
