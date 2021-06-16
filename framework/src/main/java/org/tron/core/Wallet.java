@@ -2607,6 +2607,8 @@ public class Wallet {
       if (Objects.nonNull(codeCapsule)) {
         contractCapsule.setRuntimecode(codeCapsule.getData());
         return contractCapsule.generateWrapper();
+      } else {
+        logger.info("codeStore is null");
       }
     }
     return null;
