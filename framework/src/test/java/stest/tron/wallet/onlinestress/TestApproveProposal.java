@@ -90,7 +90,12 @@ public class TestApproveProposal {
   public void testApproveProposal() {
     HashMap<Long, Long> proposalMap = new HashMap<Long, Long>();
     //proposalMap.put(25L, 1L);
-    proposalMap.put(27L, 0L);
+    proposalMap.put(41L, 1L);
+    proposalMap.put(44L, 1L);
+    proposalMap.put(48L, 1L);
+    proposalMap.put(49L, 1L);
+    proposalMap.put(51L, 1L);
+    proposalMap.put(52L, 1L);
     //proposalMap.put(28L, 1L);
     Assert.assertTrue(PublicMethed.createProposal(witness001Address, witnessKey001,
         proposalMap, blockingStubFull));
@@ -114,6 +119,9 @@ public class TestApproveProposal {
 
         "369F095838EB6EED45D4F6312AF962D5B9DE52927DA9F04174EE49F9AF54BC77",
         "9FD8E129DE181EA44C6129F727A6871440169568ADE002943EAD0E7A16D8EDAC",
+        "291C233A5A7660FB148BAE07FCBCF885224F2DF453239BD983F859E8E5AA4602",
+        "99676348CBF9501D07819BD4618ED885210CB5A03FEAF6BFF28F0AF8E1DE7DBE",
+        "FA090CFB9F3A6B00BE95FE185E82BBCFC4DA959CA6A795D275635ECF5D58466D"
 
     };
     byte[] witnessAddress;

@@ -141,7 +141,7 @@ public class ClearAbi001 {
   }
 
 
-  @Test(enabled = true, description = "Clear a contract with ABI created by itself")
+  @Test(enabled = true, dependsOnMethods = "testClearAbi001", description = "Clear a contract with ABI created by itself")
   public void testClearAbi002() {
 
     String contractName = "testConstantContract";
