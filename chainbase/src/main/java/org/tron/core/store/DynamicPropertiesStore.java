@@ -16,11 +16,12 @@ import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.config.Parameter;
 import org.tron.core.config.Parameter.ChainConstant;
+import org.tron.core.db.AsukaStore;
 import org.tron.core.db.TronStoreWithRevoking;
 
 @Slf4j(topic = "DB")
 @Component
-public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> {
+public class DynamicPropertiesStore extends AsukaStore {
 
   private static final byte[] LATEST_BLOCK_HEADER_TIMESTAMP = "latest_block_header_timestamp"
       .getBytes();
