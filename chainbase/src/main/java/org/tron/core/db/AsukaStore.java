@@ -23,7 +23,7 @@ public class AsukaStore extends TronStoreWithRevoking<BytesCapsule> {
   @Override
   public BytesCapsule getUnchecked(byte[] key) {
     if (!cache.containsKey(hashCode(key))) {
-      cache.put(hashCode(key), getUnchecked(key));
+      cache.put(hashCode(key), super.getUnchecked(key));
     }
     return cache.get(hashCode(key));
   }
