@@ -4,6 +4,7 @@ import static org.tron.protos.Protocol.Transaction.Result.contractResult;
 import static org.tron.protos.Protocol.Transaction.Result.contractResult.REVERT;
 import static org.tron.protos.Protocol.Transaction.Result.contractResult.SUCCESS;
 
+import com.google.protobuf.ByteString;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Consumer;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +39,18 @@ import org.tron.core.Constant;
 import org.tron.core.Wallet;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.TransactionCapsule;
+import org.tron.core.capsule.VotesCapsule;
+import org.tron.core.capsule.WitnessCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.consensus.ConsensusService;
 import org.tron.core.db.Manager;
 import org.tron.core.db.TransactionTrace;
 import org.tron.core.service.MortgageService;
+import org.tron.core.store.AccountStore;
 import org.tron.core.store.StoreFactory;
+import org.tron.core.store.VotesStore;
+import org.tron.core.store.WitnessStore;
 import org.tron.core.vm.config.ConfigLoader;
 import org.tron.core.vm.config.VMConfig;
 import org.tron.protos.Protocol;
@@ -882,14 +889,71 @@ public class VoteTest {
 
   private void payRewardAndDoMaintenance(int cycle) {
     while (cycle-- > 0) {
-      manager.getDelegationStore().addReward(
-          manager.getDynamicPropertiesStore().getCurrentCycleNumber(), witnessA, 1000_000_000);
-      manager.getDelegationStore().addReward(
-          manager.getDynamicPropertiesStore().getCurrentCycleNumber(), witnessB, 1000_000_000);
-      manager.getDelegationStore().addReward(
-          manager.getDynamicPropertiesStore().getCurrentCycleNumber(), witnessC, 1000_000_000);
+      long currentCycle = manager.getDynamicPropertiesStore().getCurrentCycleNumber();
+      manager.getDelegationStore().addReward(currentCycle, witnessA, 1000_000_000);
+      manager.getDelegationStore().addReward(currentCycle, witnessB, 1000_000_000);
+      manager.getDelegationStore().addReward(currentCycle, witnessC, 1000_000_000);
 
       maintenanceManager.doMaintenance();
     }
+  }
+
+  @Ignore
+  @Test
+  public void maintenanceBenchmark() {
+    WitnessStore witnessStore = manager.getWitnessStore();
+    List<ByteString> witnesses = generateAccounts(1000);
+    witnesses.forEach(w -> {
+      witnessStore.put(w.toByteArray(), new WitnessCapsule(w, 0, "http://ben.org"));
+      //manager.getChainBaseManager().addWitness(w);
+    });
+    for (int i = 0; i < 100; i++) {
+      doVote(witnesses);
+      long start = System.nanoTime();
+      maintenanceManager.doMaintenance();
+      System.out.println(i + ": " + (System.nanoTime() - start));
+    }
+  }
+
+  private void doVote(List<ByteString> witnesses) {
+    AccountStore accountStore = manager.getAccountStore();
+    VotesStore votesStore = manager.getVotesStore();
+    List<ByteString> users = generateAccounts(10_000);
+    int n = witnesses.size();
+    Random rand = new Random(System.currentTimeMillis());
+    users.forEach(u -> {
+      AccountCapsule accountCapsule = accountStore.get(u.toByteArray());
+      VotesCapsule votesCapsule = new VotesCapsule(u, accountCapsule.getVotesList());
+      accountCapsule.clearVotes();
+      for (int i = 0; i < 30; i++) {
+        Protocol.Vote vote = Protocol.Vote.newBuilder()
+            .setVoteAddress(witnesses.get(rand.nextInt(n - 1)))
+            .setVoteCount(rand.nextInt(1000))
+            .build();
+        accountCapsule.addVotes(vote.getVoteAddress(), vote.getVoteCount());
+        votesCapsule.addNewVotes(vote.getVoteAddress(), vote.getVoteCount());
+      }
+      votesStore.put(u.toByteArray(), votesCapsule);
+    });
+  }
+
+  private List<ByteString> generateAccounts(int count) {
+    AccountStore accountStore = manager.getAccountStore();
+    List<ByteString> res = new ArrayList<>();
+    Random rand = new Random(System.nanoTime());
+    for (int i = 0; i < count; i++) {
+      byte[] longBytes = new DataWord(rand.nextLong()).getLast20Bytes();
+      byte[] addBytes = new byte[21];
+      addBytes[0] = Constant.ADD_PRE_FIX_BYTE_TESTNET;
+      System.arraycopy(longBytes, 0, addBytes, 1, 20);
+      ByteString add = ByteString.copyFrom(addBytes);
+      if (res.contains(add)) {
+        i -= 1;
+        continue;
+      }
+      res.add(add);
+      accountStore.put(addBytes, new AccountCapsule(add, Protocol.AccountType.Normal));
+    }
+    return res;
   }
 }
