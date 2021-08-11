@@ -150,6 +150,7 @@ public class FullNode {
     public void run() {
       long latestBlockNum = manager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
       Queue<Item> queue = new PriorityQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
+      System.out.println("traversal start: " + latestBlockNum);
       for (int i = 1; i <= 10_000_000; i++) {
         if (i % 1000 == 0) {
           System.out.println(i);
