@@ -125,10 +125,8 @@ public class FullNode {
 
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-    Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
-    CountDownLatch counter = new CountDownLatch(1);
-    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum, queue, counter), "Traversal-1").start();
-    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 2_500_000, queue, counter), "Traversal-2").start();
+    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum), "Traversal-1").start();
+    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 2_500_000), "Traversal-2").start();
 
     rpcApiService.blockUntilShutdown();
   }
@@ -152,18 +150,12 @@ public class FullNode {
 
     private final long startIndex;
 
-    private final Queue<Item> queue;
-
-    private final CountDownLatch counter;
+    private final Queue<Item> queue = new PriorityQueue<>(1000, (i1, i2) -> (int) (i1.energy - i2.energy));
 
     public Task(ChainBaseManager manager,
-                long startIndex,
-                Queue<Item> queue,
-                CountDownLatch counter) {
+                long startIndex) {
       this.manager = manager;
       this.startIndex = startIndex;
-      this.queue = queue;
-      this.counter = counter;
     }
 
     @Override
@@ -197,7 +189,7 @@ public class FullNode {
                   info = manager.getTransactionHistoryStore().get(txId);
                 }
                 long energy = info.getInstance().getReceipt().getEnergyUsageTotal();
-                if (queue.size() < 10000) {
+                if (queue.size() < 1000) {
                   queue.offer(new Item(txId, energy, tx.getContractResult()));
                 } else if (queue.peek().energy < energy) {
                   queue.poll();
@@ -208,12 +200,8 @@ public class FullNode {
           }
         }
       }
-      if (counter.getCount() == 0) {
-        for (Item i : queue) {
-          System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
-        }
-      } else {
-        counter.countDown();
+      for (Item i : queue) {
+        System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
       }
     }
   }
