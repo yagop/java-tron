@@ -22,6 +22,7 @@ import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.capsule.TransactionInfoCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
+import org.tron.core.db.api.pojo.Block;
 import org.tron.core.db.api.pojo.Transaction;
 import org.tron.core.services.RpcApiService;
 import org.tron.core.services.http.FullNodeHttpApiService;
@@ -155,13 +156,22 @@ public class FullNode {
         if (i % 1000 == 0) {
           System.out.println(i);
         }
+        BlockCapsule block = null;
         try {
-          BlockCapsule block = manager.getBlockByNum(latestBlockNum - i);
-          if (block != null) {
-            for (TransactionCapsule tx : block.getTransactions()) {
-              if (tx.isContractType()) {
+          block = manager.getBlockByNum(latestBlockNum - i);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        if (block != null) {
+          for (TransactionCapsule tx : block.getTransactions()) {
+            if (tx.isContractType()) {
+              try {
                 byte[] txId = tx.getTransactionId().getBytes();
-                TransactionInfoCapsule info = manager.getTransactionHistoryStore().get(txId);
+                TransactionInfoCapsule info =
+                    manager.getTransactionRetStore().getTransactionInfo(txId);
+                if (info == null) {
+                  info = manager.getTransactionHistoryStore().get(txId);
+                }
                 long energy = info.getInstance().getReceipt().getEnergyUsageTotal();
                 if (queue.size() < 10000) {
                   queue.offer(new Item(txId, energy, tx.getContractResult()));
@@ -169,11 +179,9 @@ public class FullNode {
                   queue.poll();
                   queue.offer(new Item(txId, energy, tx.getContractResult()));
                 }
-              }
+              } catch (Exception ignored) {}
             }
           }
-        } catch (Exception e) {
-          e.printStackTrace();
         }
       }
       for (Item i : queue) {
