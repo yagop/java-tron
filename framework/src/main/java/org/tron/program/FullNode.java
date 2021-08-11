@@ -174,6 +174,10 @@ public class FullNode {
       for (int i = 1; i <= 2_500_000; i++) {
         if (i % 1000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
+          Item item = queue.peek();
+          if (item != null) {
+            System.out.println(name + ": " + Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result);
+          }
           start = System.currentTimeMillis();
         }
         BlockCapsule block = null;
