@@ -119,14 +119,13 @@ public class FullNode {
       appT.addService(httpApiOnPBFTService);
     }
 
-    appT.initServices(parameter);
-    appT.startServices();
-    appT.startup();
+//    appT.initServices(parameter);
+//    appT.startServices();
+//    appT.startup();
 
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
     new Thread(new Task(appT.getChainBaseManager(), latestBlockNum), "Traversal-1").start();
-    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 2_500_000), "Traversal-2").start();
 
     rpcApiService.blockUntilShutdown();
   }
@@ -150,7 +149,7 @@ public class FullNode {
 
     private final long startIndex;
 
-    private final Queue<Item> queue = new PriorityQueue<>(1000, (i1, i2) -> (int) (i1.energy - i2.energy));
+    private final Queue<Item> queue = new PriorityQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
 
     public Task(ChainBaseManager manager,
                 long startIndex) {
@@ -163,7 +162,7 @@ public class FullNode {
       String name = Thread.currentThread().getName();
       System.out.println(name + " start: " + startIndex);
       long start = System.currentTimeMillis();
-      for (int i = 1; i <= 2_500_000; i++) {
+      for (int i = 1; i <= 5_000_000; i++) {
         if (i % 1000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
           Item item = queue.peek();
