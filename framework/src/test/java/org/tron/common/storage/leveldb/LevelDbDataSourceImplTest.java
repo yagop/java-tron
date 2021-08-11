@@ -270,8 +270,40 @@ public class LevelDbDataSourceImplTest {
     seekKeyLimitNext.forEach(valeu -> {
       Assert.assertTrue("getValuesPrev1", hashSet.contains(ByteArray.toStr(valeu)));
     });
+
+    seekKeyLimitNext = dataSource.getValuesPrev("00000002aa".getBytes(), 4);
+    seekKeyLimitNext.forEach(value -> {
+      Assert.assertTrue("getValuesPrev2", hashSet.contains(ByteArray.toStr(value)));
+    });
+    Assert.assertEquals("getValuesPrev3", 2, seekKeyLimitNext.size());
+
+
+    Set<byte[]> getValuesPrev2 = dataSource.getValuesPrev("0000000700".getBytes(), 2);
+    HashSet<String> hashSet2 = Sets.newHashSet(ByteArray.toStr(value5), ByteArray.toStr(value6));
+    getValuesPrev2.forEach(value -> Assert.assertTrue(
+        "getValuesPrev4", hashSet2.contains(ByteArray.toStr(value))));
+
     seekKeyLimitNext = dataSource.getValuesPrev("0000000100".getBytes(), 2);
-    Assert.assertEquals("getValuesPrev2", 0, seekKeyLimitNext.size());
+    Assert.assertEquals("getValuesPrev5", 0, seekKeyLimitNext.size());
+    dataSource.resetDb();
+    dataSource.closeDB();
+  }
+
+  @Test
+  public void getlatestValues() {
+    LevelDbDataSourceImpl dataSource = new LevelDbDataSourceImpl(
+        Args.getInstance().getOutputDirectory(), "test_getlatestValues");
+    dataSource.initDB();
+    dataSource.resetDb();
+
+    putSomeKeyValue(dataSource);
+    Set<byte[]> latestValues = dataSource.getlatestValues(2);
+    HashSet<String> hashSet = Sets.newHashSet(ByteArray.toStr(value5), ByteArray.toStr(value6));
+    latestValues.forEach(value -> {
+      Assert.assertTrue("getlatestValues1", hashSet.contains(ByteArray.toStr(value)));
+    });
+    latestValues = dataSource.getlatestValues(10);
+    Assert.assertEquals("getlatestValues2", 6, latestValues.size());
     dataSource.resetDb();
     dataSource.closeDB();
   }

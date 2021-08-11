@@ -271,14 +271,10 @@ public class LevelDbDataSourceImpl implements DbSourceInter<byte[]>,
     resetDbLock.readLock().lock();
     try (DBIterator iterator = getDBIterator()) {
       Set<byte[]> result = Sets.newHashSet();
-      long i = 0;
       iterator.seekToLast();
-      if (iterator.hasNext()) {
-        result.add(iterator.peekNext().getValue());
-        i++;
-      }
-      for (; iterator.hasPrev() && i++ < limit; iterator.prev()) {
-        result.add(iterator.peekPrev().getValue());
+
+      for (int i = 0; iterator.hasPrev() && i++ < limit; iterator.prev()) {
+        result.add(iterator.value());
       }
       return result;
     } catch (IOException e) {
@@ -353,14 +349,14 @@ public class LevelDbDataSourceImpl implements DbSourceInter<byte[]>,
     resetDbLock.readLock().lock();
     try (DBIterator iterator = getDBIterator()) {
       Set<byte[]> result = Sets.newHashSet();
-      long i = 0;
+      iterator.seek(key);
       byte[] data = getData(key);
-      if (Objects.nonNull(data)) {
-        result.add(data);
-        i++;
+      if (data == null && iterator.Valid()) {
+        iterator.prev();
       }
-      for (iterator.seek(key); iterator.hasPrev() && i++ < limit; iterator.prev()) {
-        result.add(iterator.peekPrev().getValue());
+
+      for (int i = 0; iterator.hasPrev() && i++ < limit; iterator.prev()) {
+        result.add(iterator.value());
       }
       return result;
     } catch (IOException e) {

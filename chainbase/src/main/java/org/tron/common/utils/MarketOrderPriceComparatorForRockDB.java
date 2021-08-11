@@ -1,11 +1,11 @@
 package org.tron.common.utils;
 
+import java.nio.ByteBuffer;
 import org.rocksdb.ComparatorOptions;
-import org.rocksdb.DirectSlice;
-import org.rocksdb.util.DirectBytewiseComparator;
+import org.rocksdb.AbstractComparator;
 import org.tron.core.capsule.utils.MarketUtils;
 
-public class MarketOrderPriceComparatorForRockDB extends DirectBytewiseComparator {
+public class MarketOrderPriceComparatorForRockDB extends AbstractComparator {
 
   public MarketOrderPriceComparatorForRockDB(final ComparatorOptions copt) {
     super(copt);
@@ -17,19 +17,19 @@ public class MarketOrderPriceComparatorForRockDB extends DirectBytewiseComparato
   }
 
   @Override
-  public int compare(final DirectSlice a, final DirectSlice b) {
+  public int compare(ByteBuffer a, ByteBuffer b) {
     return MarketUtils.comparePriceKey(convertDataToBytes(a), convertDataToBytes(b));
   }
 
   /**
    * DirectSlice.data().array will throw UnsupportedOperationException.
    * */
-  public byte[] convertDataToBytes(DirectSlice directSlice) {
-    int capacity = directSlice.data().capacity();
+  public byte[] convertDataToBytes(ByteBuffer byteBuffer) {
+    int capacity = byteBuffer.capacity();
     byte[] bytes = new byte[capacity];
 
     for (int i = 0; i < capacity; i++) {
-      bytes[i] = directSlice.get(i);
+      bytes[i] = byteBuffer.get(i);
     }
 
     return bytes;
