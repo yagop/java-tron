@@ -126,11 +126,9 @@ public class FullNode {
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
     Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
-    CountDownLatch counter = new CountDownLatch(3);
+    CountDownLatch counter = new CountDownLatch(1);
     new Thread(new Task(appT.getChainBaseManager(), latestBlockNum, queue, counter), "Traversal-1").start();
     new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 2_500_000, queue, counter), "Traversal-2").start();
-    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 5_000_000, queue, counter), "Traversal-3").start();
-    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 7_500_000, queue, counter), "Traversal-4").start();
 
     rpcApiService.blockUntilShutdown();
   }
