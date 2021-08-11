@@ -5,6 +5,8 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
@@ -121,44 +123,64 @@ public class FullNode {
     appT.startServices();
     appT.startup();
 
-    new Thread(new Task(appT.getChainBaseManager())).start();
+    long latestBlockNum = appT.getChainBaseManager()
+        .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
+    Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
+    CountDownLatch counter = new CountDownLatch(3);
+    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum, queue, counter), "Traversal-1").start();
+    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 2_500_000, queue, counter), "Traversal-2").start();
+    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 5_000_000, queue, counter), "Traversal-3").start();
+    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum - 7_500_000, queue, counter), "Traversal-4").start();
 
     rpcApiService.blockUntilShutdown();
+  }
+
+  private static class Item {
+
+    byte[] txID;
+    long energy;
+    Protocol.Transaction.Result.contractResult result;
+
+    public Item(byte[] txID, long energy, Protocol.Transaction.Result.contractResult result) {
+      this.txID = txID;
+      this.energy = energy;
+      this.result = result;
+    }
   }
 
   private static class Task implements Runnable {
 
     private final ChainBaseManager manager;
 
-    Task(ChainBaseManager manager) {
+    private final long startIndex;
+
+    private final Queue<Item> queue;
+
+    private final CountDownLatch counter;
+
+    public Task(ChainBaseManager manager,
+                long startIndex,
+                Queue<Item> queue,
+                CountDownLatch counter) {
       this.manager = manager;
-    }
-
-    static class Item {
-
-      byte[] txID;
-      long energy;
-      Protocol.Transaction.Result.contractResult result;
-
-      public Item(byte[] txID, long energy, Protocol.Transaction.Result.contractResult result) {
-        this.txID = txID;
-        this.energy = energy;
-        this.result = result;
-      }
+      this.startIndex = startIndex;
+      this.queue = queue;
+      this.counter = counter;
     }
 
     @Override
     public void run() {
-      long latestBlockNum = manager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-      Queue<Item> queue = new PriorityQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
-      System.out.println("traversal start: " + latestBlockNum);
-      for (int i = 1; i <= 10_000_000; i++) {
+      String name = Thread.currentThread().getName();
+      System.out.println(name + " start: " + startIndex);
+      long start = System.currentTimeMillis();
+      for (int i = 1; i <= 2_500_000; i++) {
         if (i % 1000 == 0) {
-          System.out.println(i);
+          System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
+          start = System.currentTimeMillis();
         }
         BlockCapsule block = null;
         try {
-          block = manager.getBlockByNum(latestBlockNum - i);
+          block = manager.getBlockByNum(startIndex - i);
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -184,8 +206,12 @@ public class FullNode {
           }
         }
       }
-      for (Item i : queue) {
-        System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
+      if (counter.getCount() == 0) {
+        for (Item i : queue) {
+          System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
+        }
+      } else {
+        counter.countDown();
       }
     }
   }
