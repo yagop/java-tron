@@ -3,22 +3,33 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.util.PriorityQueue;
+import java.util.Queue;
+
+import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.core.ChainBaseManager;
 import org.tron.core.Constant;
+import org.tron.core.capsule.BlockCapsule;
+import org.tron.core.capsule.TransactionCapsule;
+import org.tron.core.capsule.TransactionInfoCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
+import org.tron.core.db.api.pojo.Transaction;
 import org.tron.core.services.RpcApiService;
 import org.tron.core.services.http.FullNodeHttpApiService;
 import org.tron.core.services.interfaceOnPBFT.RpcApiServiceOnPBFT;
 import org.tron.core.services.interfaceOnPBFT.http.PBFT.HttpApiOnPBFTService;
 import org.tron.core.services.interfaceOnSolidity.RpcApiServiceOnSolidity;
 import org.tron.core.services.interfaceOnSolidity.http.solidity.HttpApiOnSolidityService;
+import org.tron.protos.Protocol;
 
 @Slf4j(topic = "app")
 public class FullNode {
@@ -109,7 +120,65 @@ public class FullNode {
     appT.startServices();
     appT.startup();
 
+    new Thread(new Task(appT.getChainBaseManager())).start();
+
     rpcApiService.blockUntilShutdown();
+  }
+
+  private static class Task implements Runnable {
+
+    private final ChainBaseManager manager;
+
+    Task(ChainBaseManager manager) {
+      this.manager = manager;
+    }
+
+    static class Item {
+
+      byte[] txID;
+      long energy;
+      Protocol.Transaction.Result.contractResult result;
+
+      public Item(byte[] txID, long energy, Protocol.Transaction.Result.contractResult result) {
+        this.txID = txID;
+        this.energy = energy;
+        this.result = result;
+      }
+    }
+
+    @Override
+    public void run() {
+      long latestBlockNum = manager.getDynamicPropertiesStore().getLatestBlockHeaderNumber();
+      Queue<Item> queue = new PriorityQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
+      for (int i = 1; i <= 10_000_000; i++) {
+        if (i % 1000 == 0) {
+          System.out.println(i);
+        }
+        try {
+          BlockCapsule block = manager.getBlockByNum(latestBlockNum - i);
+          if (block != null) {
+            for (TransactionCapsule tx : block.getTransactions()) {
+              if (tx.isContractType()) {
+                byte[] txId = tx.getTransactionId().getBytes();
+                TransactionInfoCapsule info = manager.getTransactionHistoryStore().get(txId);
+                long energy = info.getInstance().getReceipt().getEnergyUsageTotal();
+                if (queue.size() < 10000) {
+                  queue.offer(new Item(txId, energy, tx.getContractResult()));
+                } else if (queue.peek().energy < energy) {
+                  queue.poll();
+                  queue.offer(new Item(txId, energy, tx.getContractResult()));
+                }
+              }
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+      for (Item i : queue) {
+        System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
+      }
+    }
   }
 
   public static void shutdown(final Application app) {
