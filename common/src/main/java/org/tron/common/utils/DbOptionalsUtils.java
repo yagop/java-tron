@@ -12,6 +12,7 @@ public class DbOptionalsUtils {
   public static final long DEFAULT_CACHE_SIZE = 32 * 1024 * 1024L;
   public static final int DEFAULT_MAX_OPEN_FILES = 5000;
   public static final long DEFAULT_MAX_FILE_SIZE = 4 * 1024 * 1024;
+  public static final int DEFAULT_BITS_PER_KEY = 10;
 
   public static Options createDefaultDbOptions() {
     Options dbOptions = new Options();
@@ -26,6 +27,7 @@ public class DbOptionalsUtils {
     dbOptions.cacheSize(DEFAULT_CACHE_SIZE);
     dbOptions.maxOpenFiles(DEFAULT_MAX_OPEN_FILES);
     dbOptions.maxFileSize(DEFAULT_MAX_FILE_SIZE);
+    dbOptions.bitsPerKey(DEFAULT_BITS_PER_KEY);
 
     return dbOptions;
   }
