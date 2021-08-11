@@ -23,11 +23,12 @@ public class SnapshotImpl extends AbstractSnapshot<Key, Value> {
   protected Snapshot root;
 
   SnapshotImpl(Snapshot snapshot) {
+    root = snapshot.getRoot();
+
     synchronized (this) {
       db = new HashDB(SnapshotImpl.class.getSimpleName() + ":" + root.getDbName());
     }
 
-    root = snapshot.getRoot();
     previous = snapshot;
     snapshot.setNext(this);
 
