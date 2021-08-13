@@ -3,6 +3,7 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -224,17 +225,23 @@ public class FullNode {
         for (int i = 0; i < size; i++) {
           Item item = queue.poll();
           if (item != null) {
-            Protocol.Transaction.Contract.ContractType type =
-                Protocol.Transaction.Contract.ContractType.UNRECOGNIZED;
+            System.out.print(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result + " ");
+            TransactionCapsule tx = null;
             try {
-              type = manager.getTransactionStore().get(item.txID)
-                  .getInstance().getRawData().getContract(0).getType();
+              tx = manager.getTransactionStore().get(item.txID);
             } catch (Exception e) {
               e.printStackTrace();
             }
-            System.out.println(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result + " " + type);
+            if (tx != null) {
+              System.out.println(tx.getInstance().getRawData().getContract(0).getType() + " " +
+                  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                      .format(tx.getInstance().getRawData().getTimestamp()));
+            } else {
+              System.out.println("unknown");
+            }
           }
         }
+        System.exit(0);
       } else {
         counter.countDown();
       }
