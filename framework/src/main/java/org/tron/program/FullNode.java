@@ -202,7 +202,9 @@ public class FullNode {
         }
         if (ret != null) {
           for (Protocol.TransactionInfo info : ret.getInstance().getTransactioninfoList()) {
-            if (!info.getContractAddress().isEmpty()) {
+            if (!info.getContractAddress().isEmpty()
+                && (info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.SUCCESS
+                || info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.REVERT)) {
               long energy = info.getReceipt().getEnergyUsageTotal();
               if (queue.size() < 10000) {
                 queue.offer(new Item(info.getId().toByteArray(), energy, info.getReceipt().getResult()));
@@ -215,9 +217,8 @@ public class FullNode {
         }
       }
       if (counter.getCount() == 0) {
-        for (Item i : queue) {
-          System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
-        }
+        queue.stream().sorted().forEach(i ->
+            System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result));
       } else {
         counter.countDown();
       }
