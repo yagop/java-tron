@@ -29,6 +29,7 @@ import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.api.pojo.Block;
 import org.tron.core.db.api.pojo.Transaction;
+import org.tron.core.exception.BadItemException;
 import org.tron.core.services.RpcApiService;
 import org.tron.core.services.http.FullNodeHttpApiService;
 import org.tron.core.services.interfaceOnPBFT.RpcApiServiceOnPBFT;
@@ -128,7 +129,7 @@ public class FullNode {
 
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-    long bulkBlockBum = 2_500_000;
+    long bulkBlockBum = 5_000_000;
     CountDownLatch counter = new CountDownLatch(3);
     Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
     for (int i = 0; i < 4; i++) {
@@ -223,7 +224,15 @@ public class FullNode {
         for (int i = 0; i < size; i++) {
           Item item = queue.poll();
           if (item != null) {
-            System.out.println(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result);
+            Protocol.Transaction.Contract.ContractType type =
+                Protocol.Transaction.Contract.ContractType.UNRECOGNIZED;
+            try {
+              type = manager.getTransactionStore().get(item.txID)
+                  .getInstance().getRawData().getContract(0).getType();
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+            System.out.println(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result + " " + type);
           }
         }
       } else {
