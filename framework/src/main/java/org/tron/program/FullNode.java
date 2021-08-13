@@ -3,6 +3,7 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.util.Collections;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -183,7 +184,7 @@ public class FullNode {
     public void run() {
       String name = Thread.currentThread().getName();
       System.out.println(name + " start: " + startIndex);
-      long start = System.currentTimeMillis();
+      long start = System.currentTimeMillis(), total = 0;
       for (int i = 1; i <= totalScan; i++) {
         if (i % 1000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
@@ -202,6 +203,7 @@ public class FullNode {
         }
         if (ret != null) {
           for (Protocol.TransactionInfo info : ret.getInstance().getTransactioninfoList()) {
+            if (!info.getContractAddress().isEmpty()) total += 1;
             if (!info.getContractAddress().isEmpty()
                 && (info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.SUCCESS
                 || info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.REVERT)) {
@@ -217,11 +219,17 @@ public class FullNode {
         }
       }
       if (counter.getCount() == 0) {
-        queue.stream().sorted().forEach(i ->
-            System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result));
+        int size = queue.size();
+        for (int i = 0; i < size; i++) {
+          Item item = queue.poll();
+          if (item != null) {
+            System.out.println(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result);
+          }
+        }
       } else {
         counter.countDown();
       }
+      System.out.println(name + " done: " + total);
     }
   }
 
