@@ -17,11 +17,13 @@ import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.common.utils.ByteArray;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.Constant;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.capsule.TransactionInfoCapsule;
+import org.tron.core.capsule.TransactionRetCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.api.pojo.Block;
@@ -191,30 +193,23 @@ public class FullNode {
           }
           start = System.currentTimeMillis();
         }
-        BlockCapsule block = null;
+        TransactionRetCapsule ret = null;
         try {
-          block = manager.getBlockByNum(startIndex - i);
+          ret = manager.getTransactionRetStore().getTransactionInfoByBlockNum(
+              ByteArray.fromLong(startIndex - i));
         } catch (Exception e) {
           e.printStackTrace();
         }
-        if (block != null) {
-          for (TransactionCapsule tx : block.getTransactions()) {
-            if (tx.isContractType()) {
-              try {
-                byte[] txId = tx.getTransactionId().getBytes();
-                TransactionInfoCapsule info =
-                    manager.getTransactionRetStore().getTransactionInfo(txId);
-                if (info == null) {
-                  info = manager.getTransactionHistoryStore().get(txId);
-                }
-                long energy = info.getInstance().getReceipt().getEnergyUsageTotal();
-                if (queue.size() < 10000) {
-                  queue.offer(new Item(txId, energy, tx.getContractResult()));
-                } else if (queue.peek().energy < energy) {
-                  queue.poll();
-                  queue.offer(new Item(txId, energy, tx.getContractResult()));
-                }
-              } catch (Exception ignored) {}
+        if (ret != null) {
+          for (Protocol.TransactionInfo info : ret.getInstance().getTransactioninfoList()) {
+            if (!info.getContractAddress().isEmpty()) {
+              long energy = info.getReceipt().getEnergyUsageTotal();
+              if (queue.size() < 10000) {
+                queue.offer(new Item(info.getId().toByteArray(), energy, info.getReceipt().getResult()));
+              } else if (queue.peek().energy < energy) {
+                queue.poll();
+                queue.offer(new Item(info.getId().toByteArray(), energy, info.getReceipt().getResult()));
+              }
             }
           }
         }
