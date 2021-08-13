@@ -130,17 +130,42 @@ public class FullNode {
 
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-    long bulkBlockBum = 5_000_000;
     CountDownLatch counter = new CountDownLatch(3);
     Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
-    for (int i = 0; i < 4; i++) {
-      new Thread(new Task(
-          appT.getChainBaseManager(),
-          latestBlockNum - bulkBlockBum * i,
-          bulkBlockBum,
-          counter,
-          queue), "Traversal-" + i).start();
-    }
+    new Thread(new Task(
+        appT.getChainBaseManager(),
+        latestBlockNum,
+        5_000_000,
+        counter,
+        queue), "Traversal-1").start();
+    latestBlockNum -= 5_000_000;
+    new Thread(new Task(
+        appT.getChainBaseManager(),
+        latestBlockNum,
+        5_000_000,
+        counter,
+        queue), "Traversal-2").start();
+    latestBlockNum -= 5_000_000;
+    new Thread(new Task(
+        appT.getChainBaseManager(),
+        latestBlockNum,
+        8_000_000,
+        counter,
+        queue), "Traversal-3").start();
+    latestBlockNum -= 8_000_000;
+    new Thread(new Task(
+        appT.getChainBaseManager(),
+        latestBlockNum,
+        8_000_000,
+        counter,
+        queue), "Traversal-4").start();
+    latestBlockNum -= 8_000_000;
+    new Thread(new Task(
+        appT.getChainBaseManager(),
+        latestBlockNum,
+        8_000_000,
+        counter,
+        queue), "Traversal-5").start();
 
     rpcApiService.blockUntilShutdown();
   }
@@ -188,7 +213,7 @@ public class FullNode {
       System.out.println(name + " start: " + startIndex);
       long start = System.currentTimeMillis(), total = 0;
       for (int i = 1; i <= totalScan; i++) {
-        if (i % 1000 == 0) {
+        if (i % 10000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
           Item item = queue.peek();
           if (item != null) {
@@ -220,6 +245,7 @@ public class FullNode {
           }
         }
       }
+      System.out.println(name + " done: " + total);
       if (counter.getCount() == 0) {
         int size = queue.size();
         for (int i = 0; i < size; i++) {
@@ -245,7 +271,6 @@ public class FullNode {
       } else {
         counter.countDown();
       }
-      System.out.println(name + " done: " + total);
     }
   }
 
