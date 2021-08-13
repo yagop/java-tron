@@ -125,7 +125,17 @@ public class FullNode {
 
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-    new Thread(new Task(appT.getChainBaseManager(), latestBlockNum), "Traversal-1").start();
+    long bulkBlockBum = 2_500_000;
+    CountDownLatch counter = new CountDownLatch(3);
+    Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
+    for (int i = 0; i < 4; i++) {
+      new Thread(new Task(
+          appT.getChainBaseManager(),
+          latestBlockNum - bulkBlockBum * i,
+          bulkBlockBum,
+          counter,
+          queue), "Traversal-" + i).start();
+    }
 
     rpcApiService.blockUntilShutdown();
   }
@@ -149,12 +159,22 @@ public class FullNode {
 
     private final long startIndex;
 
-    private final Queue<Item> queue = new PriorityQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
+    private final long totalScan;
+
+    private final CountDownLatch counter;
+
+    private final Queue<Item> queue;
 
     public Task(ChainBaseManager manager,
-                long startIndex) {
+                long startIndex,
+                long totalScan,
+                CountDownLatch counter,
+                Queue<Item> queue) {
       this.manager = manager;
       this.startIndex = startIndex;
+      this.totalScan = totalScan;
+      this.counter = counter;
+      this.queue = queue;
     }
 
     @Override
@@ -162,7 +182,7 @@ public class FullNode {
       String name = Thread.currentThread().getName();
       System.out.println(name + " start: " + startIndex);
       long start = System.currentTimeMillis();
-      for (int i = 1; i <= 5_000_000; i++) {
+      for (int i = 1; i <= totalScan; i++) {
         if (i % 1000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
           Item item = queue.peek();
@@ -188,7 +208,7 @@ public class FullNode {
                   info = manager.getTransactionHistoryStore().get(txId);
                 }
                 long energy = info.getInstance().getReceipt().getEnergyUsageTotal();
-                if (queue.size() < 1000) {
+                if (queue.size() < 10000) {
                   queue.offer(new Item(txId, energy, tx.getContractResult()));
                 } else if (queue.peek().energy < energy) {
                   queue.poll();
@@ -199,8 +219,12 @@ public class FullNode {
           }
         }
       }
-      for (Item i : queue) {
-        System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
+      if (counter.getCount() == 0) {
+        for (Item i : queue) {
+          System.out.println(Hex.toHexString(i.txID) + ": " + i.energy + " " + i.result);
+        }
+      } else {
+        counter.countDown();
       }
     }
   }
