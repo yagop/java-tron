@@ -130,8 +130,8 @@ public class FullNode {
 
     long latestBlockNum = appT.getChainBaseManager()
         .getDynamicPropertiesStore().getLatestBlockHeaderNumber();
-    CountDownLatch counter = new CountDownLatch(3);
-    Queue<Item> queue = new PriorityBlockingQueue<>(10000, (i1, i2) -> (int) (i1.energy - i2.energy));
+    CountDownLatch counter = new CountDownLatch(4);
+    Queue<Item> queue = new PriorityBlockingQueue<>(1000, (i1, i2) -> (int) (i1.energy - i2.energy));
     new Thread(new Task(
         appT.getChainBaseManager(),
         latestBlockNum,
@@ -174,11 +174,13 @@ public class FullNode {
 
     byte[] txID;
     long energy;
+    long fee;
     Protocol.Transaction.Result.contractResult result;
 
-    public Item(byte[] txID, long energy, Protocol.Transaction.Result.contractResult result) {
+    public Item(byte[] txID, long energy, long fee, Protocol.Transaction.Result.contractResult result) {
       this.txID = txID;
       this.energy = energy;
+      this.fee = fee;
       this.result = result;
     }
   }
@@ -210,14 +212,14 @@ public class FullNode {
     @Override
     public void run() {
       String name = Thread.currentThread().getName();
-      System.out.println(name + " start: " + startIndex);
+      System.out.println(name + " start: " + startIndex + " " + totalScan);
       long start = System.currentTimeMillis(), total = 0;
       for (int i = 1; i <= totalScan; i++) {
         if (i % 10000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
           Item item = queue.peek();
           if (item != null) {
-            System.out.println(name + ": " + Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result);
+            System.out.println(name + ": " + Hex.toHexString(item.txID) + " " + item.energy + " " + item.fee + "trx " + item.result);
           }
           start = System.currentTimeMillis();
         }
@@ -235,11 +237,13 @@ public class FullNode {
                 && (info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.SUCCESS
                 || info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.REVERT)) {
               long energy = info.getReceipt().getEnergyUsageTotal();
-              if (queue.size() < 10000) {
-                queue.offer(new Item(info.getId().toByteArray(), energy, info.getReceipt().getResult()));
+              if (queue.size() < 1000) {
+                queue.offer(new Item(info.getId().toByteArray(), energy,
+                    info.getReceipt().getEnergyFee() / 1000 / 1000, info.getReceipt().getResult()));
               } else if (queue.peek().energy < energy) {
                 queue.poll();
-                queue.offer(new Item(info.getId().toByteArray(), energy, info.getReceipt().getResult()));
+                queue.offer(new Item(info.getId().toByteArray(), energy,
+                    info.getReceipt().getEnergyFee() / 1000 / 1000, info.getReceipt().getResult()));
               }
             }
           }
@@ -251,7 +255,7 @@ public class FullNode {
         for (int i = 0; i < size; i++) {
           Item item = queue.poll();
           if (item != null) {
-            System.out.print(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.result + " ");
+            System.out.print(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.fee + "trx " + item.result + " ");
             TransactionCapsule tx = null;
             try {
               tx = manager.getTransactionStore().get(item.txID);
