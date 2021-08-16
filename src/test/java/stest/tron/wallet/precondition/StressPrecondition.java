@@ -1214,7 +1214,7 @@ public class StressPrecondition {
       String token18add = Base58.encode58Check(contractAddress);
       token18Array.offer(token18add);
     }
-    String filePath = Configuration.getByPath("stress.conf").getString("param.justLendContractAddressFile");
+    String filePath = Configuration.getByPath("stress.conf").getString("param.justLendTokenAddressFile");
     clearFile(filePath);
     writeFile(filePath,token18Array.poll());
     writeFile(filePath,token18Array.poll());
