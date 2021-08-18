@@ -306,7 +306,7 @@ public class StressPrecondition {
         PublicMethed.waitProduceNextBlock(blockingStubFull);
       }
 
-      waitProposalApprove(approveProposalIndex, blockingStubFull);
+//      waitProposalApprove(approveProposalIndex, blockingStubFull);
     }
   }
 
