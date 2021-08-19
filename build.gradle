@@ -279,8 +279,8 @@ run {
 
 run {
     if ( project.hasProperty("appArgs") )
-       print("get params, appArgs="+project.getProperty("appArgs"))
-       args Eval.me(appArgs)
+        print("get params, appArgs="+project.getProperty("appArgs"))
+        args Eval.me(appArgs)
 }
 
 shadowJar {
