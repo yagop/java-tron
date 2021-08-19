@@ -224,49 +224,52 @@ public class FullNode {
         }
         if (ret != null) {
           for (Protocol.TransactionInfo info : ret.getInstance().getTransactioninfoList()) {
-            if (!info.getContractAddress().isEmpty()) total += 1;
-            if (!info.getContractAddress().isEmpty()
-                && (info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.SUCCESS
-                || info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.REVERT)) {
-              long energy = info.getReceipt().getEnergyUsageTotal();
-              if (queue.size() < 1000) {
-                queue.offer(new Item(info.getId().toByteArray(), energy,
-                    info.getReceipt().getEnergyFee() / 1000 / 1000, info.getReceipt().getResult()));
-              } else if (queue.peek().energy < energy) {
-                queue.poll();
-                queue.offer(new Item(info.getId().toByteArray(), energy,
-                    info.getReceipt().getEnergyFee() / 1000 / 1000, info.getReceipt().getResult()));
-              }
+            if (info.getInternalTransactionsCount() > 60) {
+              System.out.println(Hex.toHexString(info.getId().toByteArray()) + ": " + info.getInternalTransactionsCount());
             }
+//            if (!info.getContractAddress().isEmpty()) total += 1;
+//            if (!info.getContractAddress().isEmpty()
+//                && (info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.SUCCESS
+//                || info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.REVERT)) {
+//              long energy = info.getReceipt().getEnergyUsageTotal();
+//              if (queue.size() < 1000) {
+//                queue.offer(new Item(info.getId().toByteArray(), energy,
+//                    info.getReceipt().getEnergyFee() / 1000 / 1000, info.getReceipt().getResult()));
+//              } else if (queue.peek().energy < energy) {
+//                queue.poll();
+//                queue.offer(new Item(info.getId().toByteArray(), energy,
+//                    info.getReceipt().getEnergyFee() / 1000 / 1000, info.getReceipt().getResult()));
+//              }
+//            }
           }
         }
       }
       System.out.println(name + " done: " + total);
-      if (counter.getCount() == 0) {
-        int size = queue.size();
-        for (int i = 0; i < size; i++) {
-          Item item = queue.poll();
-          if (item != null) {
-            System.out.print(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.fee + "trx " + item.result + " ");
-            TransactionCapsule tx = null;
-            try {
-              tx = manager.getTransactionStore().get(item.txID);
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
-            if (tx != null) {
-              System.out.println(tx.getInstance().getRawData().getContract(0).getType() + " " +
-                  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                      .format(tx.getInstance().getRawData().getTimestamp()));
-            } else {
-              System.out.println("unknown");
-            }
-          }
-        }
-        System.exit(0);
-      } else {
-        counter.countDown();
-      }
+//      if (counter.getCount() == 0) {
+//        int size = queue.size();
+//        for (int i = 0; i < size; i++) {
+//          Item item = queue.poll();
+//          if (item != null) {
+//            System.out.print(Hex.toHexString(item.txID) + ": " + item.energy + " " + item.fee + "trx " + item.result + " ");
+//            TransactionCapsule tx = null;
+//            try {
+//              tx = manager.getTransactionStore().get(item.txID);
+//            } catch (Exception e) {
+//              e.printStackTrace();
+//            }
+//            if (tx != null) {
+//              System.out.println(tx.getInstance().getRawData().getContract(0).getType() + " " +
+//                  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+//                      .format(tx.getInstance().getRawData().getTimestamp()));
+//            } else {
+//              System.out.println("unknown");
+//            }
+//          }
+//        }
+//        System.exit(0);
+//      } else {
+//        counter.countDown();
+//      }
     }
   }
 
