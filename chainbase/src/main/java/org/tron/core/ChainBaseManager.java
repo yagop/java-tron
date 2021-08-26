@@ -218,12 +218,14 @@ public class ChainBaseManager {
 
   public void closeOneStore(ITronChainBase database) {
     logger.info("******** begin to close " + database.getName() + " ********");
+    System.err.println("******** begin to close " + database.getName() + " ********");
     try {
       database.close();
     } catch (Exception e) {
       logger.info("failed to close  " + database.getName() + ". " + e);
     } finally {
       logger.info("******** end to close " + database.getName() + " ********");
+      System.err.println("******** end to close " + database.getName() + " ********");
     }
   }
 

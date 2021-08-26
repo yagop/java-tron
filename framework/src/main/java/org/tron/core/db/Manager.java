@@ -1640,8 +1640,10 @@ public class Manager {
 
   public void closeAllStore() {
     logger.info("******** begin to close db ********");
+    System.err.println("******** begin to close db ********");
     chainBaseManager.closeAllStore();
     logger.info("******** end to close db ********");
+    System.err.println("******** end to close db ********");
   }
 
   public void closeOneStore(ITronChainBase database) {

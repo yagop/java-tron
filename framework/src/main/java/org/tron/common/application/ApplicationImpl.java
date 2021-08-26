@@ -63,6 +63,7 @@ public class ApplicationImpl implements Application {
   @Override
   public void shutdown() {
     logger.info("******** start to shutdown ********");
+    System.err.println("******** start to shutdown ********");
     tronNetService.stop();
     consensusService.stop();
     synchronized (dbManager.getRevokingStore()) {
@@ -73,6 +74,7 @@ public class ApplicationImpl implements Application {
     dbManager.stopRePushTriggerThread();
     EventPluginLoader.getInstance().stopPlugin();
     logger.info("******** end to shutdown ********");
+    System.err.println("******** end to shutdown ********");
   }
 
   @Override
