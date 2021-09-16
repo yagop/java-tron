@@ -127,35 +127,35 @@ public class FullNode {
     new Thread(new Task(
         appT.getChainBaseManager(),
         latestBlockNum,
-        5_000_000,
+        6_000_000,
         counter,
         queue), "Traversal-1").start();
-    latestBlockNum -= 5_000_000;
+    latestBlockNum -= 6_000_000;
     new Thread(new Task(
         appT.getChainBaseManager(),
         latestBlockNum,
-        5_000_000,
+        6_000_000,
         counter,
         queue), "Traversal-2").start();
-    latestBlockNum -= 5_000_000;
+    latestBlockNum -= 6_000_000;
     new Thread(new Task(
         appT.getChainBaseManager(),
         latestBlockNum,
-        8_000_000,
+        6_000_000,
         counter,
         queue), "Traversal-3").start();
-    latestBlockNum -= 8_000_000;
+    latestBlockNum -= 6_000_000;
     new Thread(new Task(
         appT.getChainBaseManager(),
         latestBlockNum,
-        8_000_000,
+        6_000_000,
         counter,
         queue), "Traversal-4").start();
-    latestBlockNum -= 8_000_000;
+    latestBlockNum -= 6_000_000;
     new Thread(new Task(
         appT.getChainBaseManager(),
         latestBlockNum,
-        8_000_000,
+        10_000_000,
         counter,
         queue), "Traversal-5").start();
 
@@ -207,7 +207,7 @@ public class FullNode {
       System.out.println(name + " start: " + startIndex + " " + totalScan);
       long start = System.currentTimeMillis(), total = 0;
       for (int i = 1; i <= totalScan; i++) {
-        if (i % 10000 == 0) {
+        if (i % 50000 == 0) {
           System.out.println(name + ": " + i + " cost " + ((System.currentTimeMillis() - start) / 1000) + "s");
           Item item = queue.peek();
           if (item != null) {
@@ -224,11 +224,13 @@ public class FullNode {
         }
         if (ret != null) {
           for (Protocol.TransactionInfo info : ret.getInstance().getTransactioninfoList()) {
-            info.getLogList().forEach(log -> {
+            for (int j = 0; j < info.getLogList().size(); j++) {
+              Protocol.TransactionInfo.Log log = info.getLog(j);
               if (log.getTopicsList().size() > 0 && Hex.toHexString(log.getTopics(0).toByteArray()).toLowerCase().contains("deaa91b6")) {
                 System.out.println(Hex.toHexString(info.getId().toByteArray()));
+                break;
               }
-            });
+            }
 //            if (info.getInternalTransactionsCount() > 60) {
 //              System.out.println(Hex.toHexString(info.getId().toByteArray()) + ": " + info.getInternalTransactionsCount());
 //            }
