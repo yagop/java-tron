@@ -224,9 +224,14 @@ public class FullNode {
         }
         if (ret != null) {
           for (Protocol.TransactionInfo info : ret.getInstance().getTransactioninfoList()) {
-            if (info.getInternalTransactionsCount() > 60) {
-              System.out.println(Hex.toHexString(info.getId().toByteArray()) + ": " + info.getInternalTransactionsCount());
-            }
+            info.getLogList().forEach(log -> {
+              if (log.getTopicsList().size() > 0 && Hex.toHexString(log.getTopics(0).toByteArray()).toLowerCase().contains("deaa91b6")) {
+                System.out.println(Hex.toHexString(info.getId().toByteArray()));
+              }
+            });
+//            if (info.getInternalTransactionsCount() > 60) {
+//              System.out.println(Hex.toHexString(info.getId().toByteArray()) + ": " + info.getInternalTransactionsCount());
+//            }
 //            if (!info.getContractAddress().isEmpty()) total += 1;
 //            if (!info.getContractAddress().isEmpty()
 //                && (info.getReceipt().getResult() == Protocol.Transaction.Result.contractResult.SUCCESS
