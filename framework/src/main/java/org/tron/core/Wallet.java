@@ -450,7 +450,8 @@ public class Wallet {
       ContractType contractType) throws ContractValidateException {
     TransactionCapsule trx = new TransactionCapsule(message, contractType);
     if (contractType != ContractType.CreateSmartContract
-        && contractType != ContractType.TriggerSmartContract) {
+        && contractType != ContractType.TriggerSmartContract
+        && contractType != ContractType.EthTransaction) {
       List<Actuator> actList = ActuatorFactory.createActuator(trx, chainBaseManager);
       for (Actuator act : actList) {
         act.validate();
@@ -523,7 +524,7 @@ public class Wallet {
       }
       dbManager.pushTransaction(trx);
       int num = tronNetService.fastBroadcastTransaction(message);
-      if (num == 0) {
+      if (num != 0) {
         return builder.setResult(false).setCode(response_code.NOT_ENOUGH_EFFECTIVE_CONNECTION)
                 .setMessage(ByteString.copyFromUtf8("P2P broadcast failed.")).build();
       } else {

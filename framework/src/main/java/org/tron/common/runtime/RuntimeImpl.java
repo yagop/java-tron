@@ -10,6 +10,7 @@ import org.tron.common.parameter.CommonParameter;
 import org.tron.core.actuator.Actuator;
 import org.tron.core.actuator.Actuator2;
 import org.tron.core.actuator.ActuatorCreator;
+import org.tron.core.actuator.EthTxActuator;
 import org.tron.core.actuator.VMActuator;
 import org.tron.core.db.TransactionContext;
 import org.tron.core.exception.ContractExeException;
@@ -51,6 +52,9 @@ public class RuntimeImpl implements Runtime {
           throw new ContractValidateException("not exist contract " + "SmartContract");
         }
         actuator2 = new VMActuator(context.isStatic());
+        break;
+      case ContractType.EthTransaction_VALUE:
+        actuator2 = new EthTxActuator(context.isStatic());
         break;
       default:
         actuatorList = ActuatorCreator.getINSTANCE().createActuator(context.getTrxCap());

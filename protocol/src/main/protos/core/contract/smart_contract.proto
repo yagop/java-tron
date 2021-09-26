@@ -95,3 +95,16 @@ message SmartContractDataWrapper {
   SmartContract smart_contract = 1;
   bytes runtimecode = 2;
 }
+
+message EthTransaction {
+  bytes owner_address = 1;
+  bytes nonce = 2;
+  bytes gas_price = 3;
+  bytes gas = 4;
+  bytes to = 5;
+  bytes value = 6;
+  bytes data = 7;
+  bytes v = 8;
+  bytes r = 9;
+  bytes s = 10;
+}

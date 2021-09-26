@@ -27,6 +27,9 @@ import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Internal;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +42,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.crypto.SignInterface;
 import org.tron.common.crypto.SignUtils;
@@ -74,6 +78,8 @@ import org.tron.protos.contract.BalanceContract;
 import org.tron.protos.contract.BalanceContract.TransferContract;
 import org.tron.protos.contract.ShieldContract.ShieldedTransferContract;
 import org.tron.protos.contract.ShieldContract.SpendDescription;
+import org.tron.protos.contract.SmartContractOuterClass;
+import org.tron.protos.contract.SmartContractOuterClass.EthTransaction;
 import org.tron.protos.contract.SmartContractOuterClass.CreateSmartContract;
 import org.tron.protos.contract.SmartContractOuterClass.TriggerSmartContract;
 import org.tron.protos.contract.WitnessContract.VoteWitnessContract;
@@ -609,6 +615,23 @@ public class TransactionCapsule implements ProtoCapsule<Transaction> {
       }
 
       byte[] hash = this.getRawHash().getBytes();
+      if (this.transaction.getRawData().getContract(0).getType() == ContractType.EthTransaction) {
+        String path = "org.tron.core.services.http.bean.EthTxData";
+        try {
+          Class<?> clazz = Class.forName(path);
+          Method fromMethod = clazz.getMethod("fromEthTransaction", EthTransaction.class);
+          EthTransaction ethTx = this.transaction.getRawData().getContract(0)
+              .getParameter().unpack(EthTransaction.class);
+          Object ethTxData = fromMethod.invoke(null, ethTx);
+          Method txHashMethod = clazz.getMethod("getTxHash");
+          hash = (byte[]) txHashMethod.invoke(ethTxData);
+        } catch (Exception e) {
+          e.printStackTrace();
+          logger.warn("EthTransaction message hash generated error.");
+          isVerified = false;
+          throw new ValidateSignatureException(e.getMessage());
+        }
+      }
 
       try {
         if (!validateSignature(this.transaction, hash, accountStore, dynamicPropertiesStore)) {

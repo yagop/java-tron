@@ -212,6 +212,8 @@ message Account {
   Permission owner_permission = 31;
   Permission witness_permission = 32;
   repeated Permission active_permission = 33;
+
+  uint64 nonce = 60;
 }
 
 /* AccountAsset */
@@ -376,6 +378,7 @@ message Transaction {
       ShieldedTransferContract = 51;
       MarketSellAssetContract = 52;
       MarketCancelOrderContract = 53;
+      EthTransaction = 54;
     }
     ContractType type = 1;
     google.protobuf.Any parameter = 2;
