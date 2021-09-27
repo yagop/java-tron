@@ -31,6 +31,7 @@ import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.math.ec.ECPoint;
 import org.tron.common.crypto.jce.TronCastleProvider;
+import org.tron.common.rlp.RLP;
 import org.tron.common.utils.DecodeUtil;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
@@ -43,36 +44,13 @@ public class Hash {
   private static final String HASH_256_ALGORITHM_NAME;
   private static final String HASH_512_ALGORITHM_NAME;
   private static final String ALGORITHM_NOT_FOUND = "Can't find such algorithm";
-  /**
-   * [0x80] If a string is 0-55 bytes long, the RLP encoding consists of a single byte with value
-   * 0x80 plus the length of the string followed by the string. The range of the first byte is thus
-   * [0x80, 0xb7].
-   */
-  private static final int OFFSET_SHORT_ITEM = 0x80;
-
-  /**
-   * [0xb7] If a string is more than 55 bytes long, the RLP encoding consists of a single byte with
-   * value 0xb7 plus the length of the length of the string in binary form, followed by the length
-   * of the string, followed by the string. For example, a length-1024 string would be encoded as
-   * \xb9\x04\x00 followed by the string. The range of the first byte is thus [0xb8, 0xbf].
-   */
-  private static final int OFFSET_LONG_ITEM = 0xb7;
-
-  /**
-   * Reason for threshold according to Vitalik Buterin: - 56 bytes maximizes the benefit of both
-   * options - if we went with 60 then we would have only had 4 slots for long strings so RLP would
-   * not have been able to store objects above 4gb - if we went with 48 then RLP would be fine for
-   * 2^128 space, but that's way too much - so 56 and 2^64 space seems like the right place to put
-   * the cutoff - also, that's where Bitcoin's varint does the cutof
-   */
-  private static final int SIZE_THRESHOLD = 56;
 
   static {
     Security.addProvider(TronCastleProvider.getInstance());
     CRYPTO_PROVIDER = Security.getProvider("BC");
     HASH_256_ALGORITHM_NAME = "TRON-KECCAK-256";
     HASH_512_ALGORITHM_NAME = "TRON-KECCAK-512";
-    EMPTY_TRIE_HASH = sha3(encodeElement(EMPTY_BYTE_ARRAY));
+    EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
   }
 
   public static byte[] sha3(byte[] input) {
@@ -121,58 +99,6 @@ public class Hash {
     } catch (NoSuchAlgorithmException e) {
       logger.error(ALGORITHM_NOT_FOUND, e);
       throw new RuntimeException(e);
-    }
-  }
-
-  public static byte[] encodeElement(byte[] srcData) {
-
-    // [0x80]
-    if (isNullOrZeroArray(srcData)) {
-      return new byte[]{(byte) OFFSET_SHORT_ITEM};
-
-      // [0x00]
-    } else if (isSingleZero(srcData)) {
-      return srcData;
-
-      // [0x01, 0x7f] - single byte, that byte is its own RLP encoding
-    } else if (srcData.length == 1 && (srcData[0] & 0xFF) < 0x80) {
-      return srcData;
-
-      // [0x80, 0xb7], 0 - 55 bytes
-    } else if (srcData.length < SIZE_THRESHOLD) {
-      // length = 8X
-      byte length = (byte) (OFFSET_SHORT_ITEM + srcData.length);
-      byte[] data = Arrays.copyOf(srcData, srcData.length + 1);
-      System.arraycopy(data, 0, data, 1, srcData.length);
-      data[0] = length;
-
-      return data;
-      // [0xb8, 0xbf], 56+ bytes
-    } else {
-      // length of length = BX
-      // prefix = [BX, [length]]
-      int tmpLength = srcData.length;
-      byte lengthOfLength = 0;
-      while (tmpLength != 0) {
-        ++lengthOfLength;
-        tmpLength = tmpLength >> 8;
-      }
-
-      // set length Of length at first byte
-      byte[] data = new byte[1 + lengthOfLength + srcData.length];
-      data[0] = (byte) (OFFSET_LONG_ITEM + lengthOfLength);
-
-      // copy length after first byte
-      tmpLength = srcData.length;
-      for (int i = lengthOfLength; i > 0; --i) {
-        data[i] = (byte) (tmpLength & 0xFF);
-        tmpLength = tmpLength >> 8;
-      }
-
-      // at last copy the number bytes after its length
-      System.arraycopy(srcData, 0, data, 1 + lengthOfLength, srcData.length);
-
-      return data;
     }
   }
 

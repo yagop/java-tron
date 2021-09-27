@@ -4,8 +4,8 @@ import static org.apache.commons.lang3.concurrent.ConcurrentUtils.constantFuture
 import static org.tron.common.crypto.Hash.EMPTY_TRIE_HASH;
 import static org.tron.common.utils.ByteArray.toHexString;
 import static org.tron.common.utils.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.tron.core.capsule.utils.RLP.EMPTY_ELEMENT_RLP;
-import static org.tron.core.capsule.utils.RLP.encodeList;
+import static org.tron.common.rlp.RLP.EMPTY_ELEMENT_RLP;
+import static org.tron.common.rlp.RLP.encodeList;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tron.common.crypto.Hash;
 import org.tron.core.capsule.BytesCapsule;
-import org.tron.core.capsule.utils.FastByteComparisons;
-import org.tron.core.capsule.utils.RLP;
+import org.tron.common.rlp.FastByteComparisons;
+import org.tron.common.rlp.RLP;
 import org.tron.core.db2.common.ConcurrentHashDB;
 import org.tron.core.db2.common.DB;
 
@@ -442,29 +442,29 @@ public class TrieImpl implements Trie<byte[]> {
             byte[] childrenHash = childrenHash(cNode, cpList, level + 1, false);
             cp.children[i] =
                 childrenHash.length < 32 && !forceHash ? childrenHash
-                    : Hash.encodeElement(childrenHash);
+                    : RLP.encodeElement(childrenHash);
           } else {
-            cp.children[i] = Hash.encodeElement(cNode.hash);
+            cp.children[i] = RLP.encodeElement(cNode.hash);
           }
         } else {
           cp.children[i] = EMPTY_ELEMENT_RLP;
         }
       }
       byte[] value = n.branchNodeGetValue();
-      cp.children[16] = value == null ? EMPTY_ELEMENT_RLP : Hash.encodeElement(value);
+      cp.children[16] = value == null ? EMPTY_ELEMENT_RLP : RLP.encodeElement(value);
       hashArray = cp.children.clone();
     } else if (n.getType() == NodeType.KVNodeNode) {
       cp.setNodeType(NodeType.KVNodeNode);
       TrieKey trieKey = n.kvNodeGetKey();
       Node cNode = n.kvNodeGetChildNode();
-      cp.children[0] = Hash.encodeElement(trieKey.toPacked());
+      cp.children[0] = RLP.encodeElement(trieKey.toPacked());
       if (cNode.hash == null) {
         byte[] childrenHash = childrenHash(cNode, cpList, level + 1, false);
         cp.children[1] =
             childrenHash.length < 32 && !forceHash ? childrenHash
-                : Hash.encodeElement(childrenHash);
+                : RLP.encodeElement(childrenHash);
       } else {
-        cp.children[1] = Hash.encodeElement(cNode.hash);
+        cp.children[1] = RLP.encodeElement(cNode.hash);
       }
       hashArray = cp.children.clone();
       cp.children[0] = trieKey;
@@ -472,8 +472,8 @@ public class TrieImpl implements Trie<byte[]> {
       cp.setNodeType(NodeType.KVNodeValue);
       byte[] value = n.kvNodeGetValue();
       TrieKey trieKey = n.kvNodeGetKey();
-      cp.children[0] = Hash.encodeElement(trieKey.toPacked());
-      cp.children[1] = Hash.encodeElement(value == null ? EMPTY_BYTE_ARRAY : value);
+      cp.children[0] = RLP.encodeElement(trieKey.toPacked());
+      cp.children[1] = RLP.encodeElement(value == null ? EMPTY_BYTE_ARRAY : value);
       hashArray = cp.children.clone();
       cp.children[0] = trieKey;
     }
@@ -496,7 +496,7 @@ public class TrieImpl implements Trie<byte[]> {
     for (Entry<byte[], Node> entry : nodeMap.entrySet()) {
       if (i > 0) {
         byte[] hash =
-            (beforeNode.length < 32) ? entry.getKey() : Hash.encodeElement(entry.getKey());
+            (beforeNode.length < 32) ? entry.getKey() : RLP.encodeElement(entry.getKey());
         if (!Arrays.equals(beforeNode, hash)) {
           return false;
         }
@@ -513,7 +513,7 @@ public class TrieImpl implements Trie<byte[]> {
         break;
         case KVNodeNode: {
           TrieKey currentNodeKey = (TrieKey) entry.getValue().children[0];
-          entry.getValue().children[0] = Hash.encodeElement(currentNodeKey.toPacked());
+          entry.getValue().children[0] = RLP.encodeElement(currentNodeKey.toPacked());
           TrieKey commonPrefix = trieKey.getCommonPrefix(currentNodeKey);
           if (commonPrefix.getLength() != currentNodeKey.getLength()) {
             return false;
@@ -524,7 +524,7 @@ public class TrieImpl implements Trie<byte[]> {
         break;
         case KVNodeValue: {
           TrieKey currentNodeKey = (TrieKey) entry.getValue().children[0];
-          entry.getValue().children[0] = Hash.encodeElement(currentNodeKey.toPacked());
+          entry.getValue().children[0] = RLP.encodeElement(currentNodeKey.toPacked());
           if (!currentNodeKey.equals(trieKey)) {
             return false;
           }
@@ -645,7 +645,7 @@ public class TrieImpl implements Trie<byte[]> {
 
     private byte[] encode(final int depth, boolean forceHash) {
       if (!dirty) {
-        return hash != null ? Hash.encodeElement(hash) : rlp;
+        return hash != null ? RLP.encodeElement(hash) : rlp;
       } else {
         NodeType type = getType();
         byte[] ret;
@@ -679,7 +679,7 @@ public class TrieImpl implements Trie<byte[]> {
               }
             }
             byte[] value = branchNodeGetValue();
-            encoded[16] = constantFuture(Hash.encodeElement(value));
+            encoded[16] = constantFuture(RLP.encodeElement(value));
             try {
               ret = encodeRlpListFutures(encoded);
             } catch (Exception e) {
@@ -692,16 +692,16 @@ public class TrieImpl implements Trie<byte[]> {
               encoded[i] = child == null ? EMPTY_ELEMENT_RLP : child.encode(depth + 1, false);
             }
             byte[] value = branchNodeGetValue();
-            encoded[16] = Hash.encodeElement(value);
+            encoded[16] = RLP.encodeElement(value);
             ret = encodeList(encoded);
           }
         } else if (type == NodeType.KVNodeNode) {
-          ret = encodeList(Hash.encodeElement(kvNodeGetKey().toPacked()),
+          ret = encodeList(RLP.encodeElement(kvNodeGetKey().toPacked()),
               kvNodeGetChildNode().encode(depth + 1, false));
         } else {
           byte[] value = kvNodeGetValue();
-          ret = encodeList(Hash.encodeElement(kvNodeGetKey().toPacked()),
-              Hash.encodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
+          ret = encodeList(RLP.encodeElement(kvNodeGetKey().toPacked()),
+              RLP.encodeElement(value == null ? EMPTY_BYTE_ARRAY : value));
         }
         if (hash != null) {
           deleteHash(hash);
@@ -713,7 +713,7 @@ public class TrieImpl implements Trie<byte[]> {
         } else {
           hash = Hash.sha3(ret);
           addHash(hash, ret);
-          return Hash.encodeElement(hash);
+          return RLP.encodeElement(hash);
         }
       }
     }

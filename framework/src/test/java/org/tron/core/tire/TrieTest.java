@@ -26,7 +26,7 @@ import java.util.Map;
 import org.bouncycastle.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tron.core.capsule.utils.RLP;
+import org.tron.common.rlp.RLP;
 import org.tron.core.trie.TrieImpl;
 import org.tron.core.trie.TrieImpl.Node;
 

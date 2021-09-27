@@ -6,7 +6,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.tron.common.crypto.Hash;
+import org.tron.common.rlp.RLP;
 import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.db.TronStoreWithRevoking;
 import org.tron.core.db.accountstate.AccountStateEntity;
@@ -38,7 +38,7 @@ public class AccountStateStoreTrie extends TronStoreWithRevoking<BytesCapsule> i
 
   public AccountStateEntity getAccount(byte[] key, byte[] rootHash) {
     TrieImpl trie = new TrieImpl(this, rootHash);
-    byte[] value = trie.get(Hash.encodeElement(key));
+    byte[] value = trie.get(RLP.encodeElement(key));
     return ArrayUtils.isEmpty(value) ? null : AccountStateEntity.parse(value);
   }
 
