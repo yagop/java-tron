@@ -1151,4 +1151,8 @@ public class AccountCapsule implements ProtoCapsule<Account>, Comparable<Account
     }
   }
 
+  public long getNonce() {
+    return this.account.getNonce();
+  }
+
 }

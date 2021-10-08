@@ -29,6 +29,7 @@ import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.utils.ByteUtil;
 import org.tron.core.capsule.ContractCapsule;
 import org.tron.core.exception.ContractValidateException;
+import org.tron.core.vm.program.EProgram;
 import org.tron.core.vm.program.Program;
 import org.tron.core.vm.repository.Repository;
 import org.tron.protos.Protocol.Block;
@@ -152,6 +153,35 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
       DataWord inValue, DataWord tokenValue, DataWord tokenId, long balanceInt, byte[] dataIn,
       Repository deposit, boolean isStaticCall, boolean byTestingSuite, long vmStartInUs,
       long vmShouldEndInUs, long energyLimit) {
+
+    DataWord address = toAddress;
+    DataWord origin = program.getOriginAddress();
+    DataWord caller = callerAddress;
+    DataWord balance = new DataWord(balanceInt);
+    DataWord callValue = inValue;
+
+    byte[] data = Arrays.clone(dataIn);
+    DataWord lastHash = program.getPrevHash();
+    DataWord coinbase = program.getCoinbase();
+    DataWord timestamp = program.getTimestamp();
+    DataWord number = program.getNumber();
+    DataWord difficulty = program.getDifficulty();
+
+    return new ProgramInvokeImpl(address, origin, caller, balance, callValue, tokenValue, tokenId,
+        data, lastHash, coinbase, timestamp, number, difficulty,
+        deposit, program.getCallDeep() + 1, isStaticCall, byTestingSuite, vmStartInUs,
+        vmShouldEndInUs, energyLimit);
+  }
+
+  /**
+   * This invocation created for contract call contract
+   */
+  @Override
+  public ProgramInvoke createProgramInvoke(EProgram program, DataWord toAddress,
+                                           DataWord callerAddress,
+                                           DataWord inValue, DataWord tokenValue, DataWord tokenId, long balanceInt, byte[] dataIn,
+                                           Repository deposit, boolean isStaticCall, boolean byTestingSuite, long vmStartInUs,
+                                           long vmShouldEndInUs, long energyLimit) {
 
     DataWord address = toAddress;
     DataWord origin = program.getOriginAddress();

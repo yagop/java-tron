@@ -21,6 +21,7 @@ package org.tron.core.vm.program.invoke;
 import org.tron.common.runtime.InternalTransaction;
 import org.tron.common.runtime.vm.DataWord;
 import org.tron.core.exception.ContractValidateException;
+import org.tron.core.vm.program.EProgram;
 import org.tron.core.vm.program.Program;
 import org.tron.core.vm.repository.Repository;
 import org.tron.protos.Protocol.Block;
@@ -44,6 +45,12 @@ public interface ProgramInvokeFactory {
       long balanceInt, byte[] dataIn, Repository deposit, boolean staticCall,
       boolean byTestingSuite,
       long vmStartInUs, long vmShouldEndInUs, long energyLimit);
+
+  ProgramInvoke createProgramInvoke(EProgram program, DataWord toAddress, DataWord callerAddress,
+                                    DataWord inValue, DataWord tokenValue, DataWord tokenId,
+                                    long balanceInt, byte[] dataIn, Repository deposit, boolean staticCall,
+                                    boolean byTestingSuite,
+                                    long vmStartInUs, long vmShouldEndInUs, long energyLimit);
 
 
 }

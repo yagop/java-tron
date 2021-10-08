@@ -21,6 +21,8 @@ import com.google.common.base.CaseFormat;
 import com.google.common.primitives.Longs;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+
+import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +37,7 @@ import org.tron.api.GrpcAPI.TransactionExtention;
 import org.tron.api.GrpcAPI.TransactionSignWeight;
 import org.tron.api.GrpcAPI.TransactionSignWeight.Result;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.common.rlp.RLP;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.ChainBaseManager;
 import org.tron.core.capsule.AccountCapsule;
@@ -161,6 +164,14 @@ public class TransactionUtil {
     System.arraycopy(nonceBytes, 0, combined, transactionRootId.length, nonceBytes.length);
 
     return sha3omit12(combined);
+  }
+
+  // for 'eth create'
+  public static byte[] generateEthContractAddress(byte[] contractAddress, byte[] nonce) {
+    byte[] encSender = RLP.encodeElement(contractAddress);
+    byte[] encNonce = RLP.encodeBigInteger(new BigInteger(1, nonce));
+
+    return sha3omit12(RLP.encodeList(encSender, encNonce));
   }
 
   public static boolean checkPermissionOperations(Permission permission, Contract contract)

@@ -5,15 +5,19 @@ public class EnergyCost {
 
   private static EnergyCost instance = null;
   private final int BALANCE = 20;
+  private final int EBALANCE = 2600;
   private final int SHA3 = 30;
   private final int SHA3_WORD = 6;
   private final int SLOAD = 50;
+  private final int ESLOAD = 2100;
   private final int STOP = 0;
   private final int SUICIDE = 0;
   private final int CLEAR_SSTORE = 5000;
   private final int SET_SSTORE = 20000;
   private final int RESET_SSTORE = 5000;
   private final int REFUND_SSTORE = 15000;
+  private final int WARM_SSTORE = 100;
+  private final int COLD_SSTORE = 2100;
   private final int CREATE = 32000;
   private final int CALL = 40;
   private final int STIPEND_CALL = 2300;
@@ -49,6 +53,10 @@ public class EnergyCost {
     return BALANCE;
   }
 
+  public int getEBalance() {
+    return EBALANCE;
+  }
+
   public int getSha3() {
     return SHA3;
   }
@@ -59,6 +67,10 @@ public class EnergyCost {
 
   public int getSLoad() {
     return SLOAD;
+  }
+
+  public int getESLoad() {
+    return ESLOAD;
   }
 
   public int getStop() {
@@ -83,6 +95,14 @@ public class EnergyCost {
 
   public int getRefundSStore() {
     return REFUND_SSTORE;
+  }
+
+  public int getWarmSStore() {
+    return WARM_SSTORE;
+  }
+
+  public int getColdSStore() {
+    return COLD_SSTORE;
   }
 
   public int getCreate() {
