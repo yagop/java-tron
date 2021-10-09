@@ -271,7 +271,7 @@ public interface TronJsonRpc {
   @JsonRpcErrors({
       @JsonRpcError(exception = JsonRpcMethodNotFoundException.class, code = -32601, data = "{}"),
   })
-  String ethSendRawTransaction(String rawData) throws JsonRpcMethodNotFoundException;
+  String ethSendRawTransaction(String rawData) throws JsonRpcMethodNotFoundException, JsonRpcInvalidParamsException, JsonRpcInvalidRequestException, JsonRpcInternalException;
 
   @JsonRpcMethod("eth_sendTransaction")
   @JsonRpcErrors({

@@ -21,12 +21,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.tron.api.GrpcAPI.BytesMessage;
 import org.tron.api.GrpcAPI.Return;
 import org.tron.api.GrpcAPI.Return.response_code;
 import org.tron.api.GrpcAPI.TransactionExtention;
 import org.tron.common.crypto.Hash;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.common.rlp.RLP;
+import org.tron.common.rlp.RLPList;
 import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
@@ -47,9 +50,11 @@ import org.tron.core.services.NodeInfoService;
 import org.tron.core.services.http.JsonFormat;
 import org.tron.core.services.http.Util;
 import org.tron.core.store.StorageRowStore;
+import org.tron.core.types.EthLegacyTx;
 import org.tron.core.vm.config.VMConfig;
 import org.tron.core.vm.program.Storage;
 import org.tron.program.Version;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.Account;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.Transaction;
@@ -237,7 +242,7 @@ public class TronJsonRpcImpl implements TronJsonRpc {
 
   @Override
   public String ethChainId() throws JsonRpcInternalException {
-    // return hash of genesis block
+    // return hash of genesis block & ((1 << 31) - 1)
     try {
       byte[] chainId = wallet.getBlockCapsuleByNum(0).getBlockId().getBytes();
       return ByteArray.toJsonHex(Arrays.copyOfRange(chainId, chainId.length - 4, chainId.length));
@@ -925,9 +930,42 @@ public class TronJsonRpcImpl implements TronJsonRpc {
   }
 
   @Override
-  public String ethSendRawTransaction(String rawData) throws JsonRpcMethodNotFoundException {
-    throw new JsonRpcMethodNotFoundException(
-        "the method eth_sendRawTransaction does not exist/is not available");
+  public String ethSendRawTransaction(String rawData)
+      throws JsonRpcInvalidParamsException, JsonRpcInvalidRequestException,
+      JsonRpcInternalException {
+    try {
+      EthLegacyTx legacyTx;
+      byte[] rlpEncoded = Hex.decode(rawData);
+      if (rlpEncoded.length > 0 && (rlpEncoded[0] & 0xff) > 0x7f) {
+        // legacy transaction
+        RLPList ethTx = (RLPList) RLP.decode2(rlpEncoded).get(0);
+        legacyTx = EthLegacyTx.fromLegacy(ethTx);
+        if (legacyTx == null) {
+          throw new RuntimeException("parse rlp data error.");
+        }
+      } else {
+        switch (rlpEncoded[0]) {
+          case 1:
+          case 2:
+            throw new JsonRpcInvalidRequestException(
+                "type-" + rlpEncoded[0] + " tx is not supported now.");
+          default:
+            throw new JsonRpcInvalidParamsException("invalid tx type.");
+        }
+      }
+      TransactionCapsule tronTxCap = wallet.createTransactionCapsule(legacyTx.toEthTransaction(),
+          Protocol.Transaction.Contract.ContractType.EthTransaction);
+      byte[] sig = new byte[65];
+      System.arraycopy(legacyTx.getR(), 0, sig, 0, 32);
+      System.arraycopy(legacyTx.getS(), 0, sig, 32, 32);
+      sig[64] = legacyTx.getRealV();
+      Protocol.Transaction tronTx = tronTxCap.getInstance()
+          .toBuilder().addSignature(ByteString.copyFrom(sig)).build();
+      wallet.broadcastTransaction(tronTx);
+      return "0x" + Hex.toHexString(Sha256Hash.hash(true, tronTx.getRawData().toByteArray()));
+    } catch (ContractValidateException | RuntimeException e) {
+      throw new JsonRpcInternalException(e.getMessage());
+    }
   }
 
   @Override
