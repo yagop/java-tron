@@ -378,6 +378,7 @@ message Transaction {
       ShieldedTransferContract = 51;
       MarketSellAssetContract = 52;
       MarketCancelOrderContract = 53;
+      EthTransaction = 54;
     }
     ContractType type = 1;
     google.protobuf.Any parameter = 2;
