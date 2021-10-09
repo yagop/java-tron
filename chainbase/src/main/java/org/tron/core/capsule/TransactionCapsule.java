@@ -58,6 +58,7 @@ import org.tron.core.exception.SignatureFormatException;
 import org.tron.core.exception.ValidateSignatureException;
 import org.tron.core.store.AccountStore;
 import org.tron.core.store.DynamicPropertiesStore;
+import org.tron.core.types.EthLegacyTx;
 import org.tron.protos.Protocol.Key;
 import org.tron.protos.Protocol.Permission;
 import org.tron.protos.Protocol.Permission.PermissionType;
@@ -74,8 +75,10 @@ import org.tron.protos.contract.BalanceContract;
 import org.tron.protos.contract.BalanceContract.TransferContract;
 import org.tron.protos.contract.ShieldContract.ShieldedTransferContract;
 import org.tron.protos.contract.ShieldContract.SpendDescription;
+import org.tron.protos.contract.SmartContractOuterClass;
 import org.tron.protos.contract.SmartContractOuterClass.CreateSmartContract;
 import org.tron.protos.contract.SmartContractOuterClass.TriggerSmartContract;
+import org.tron.protos.contract.SmartContractOuterClass.EthTransaction;
 import org.tron.protos.contract.WitnessContract.VoteWitnessContract;
 import org.tron.protos.contract.WitnessContract.WitnessCreateContract;
 import org.tron.protos.contract.WitnessContract.WitnessUpdateContract;
@@ -606,6 +609,18 @@ public class TransactionCapsule implements ProtoCapsule<Transaction> {
       }
 
       byte[] hash = this.getRawHash().getBytes();
+      if (this.transaction.getRawData().getContract(0).getType() == ContractType.EthTransaction) {
+        try {
+          EthTransaction ethTx = this.transaction.getRawData().getContract(0)
+              .getParameter().unpack(EthTransaction.class);
+          EthLegacyTx legacyTx = EthLegacyTx.fromEthTransaction(ethTx);
+          hash = legacyTx.getTxHash();
+        } catch (Exception e) {
+          logger.warn("EthTransaction message hash generated error.");
+          isVerified = false;
+          throw new ValidateSignatureException(e.getMessage());
+        }
+      }
 
       try {
         if (!validateSignature(this.transaction, hash, accountStore, dynamicPropertiesStore)) {
