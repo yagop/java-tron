@@ -20,6 +20,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.bouncycastle.util.encoders.Hex;
 import org.testng.Assert;
 import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI;
 import org.tron.api.GrpcAPI.BytesMessage;
 import org.tron.api.GrpcAPI.EmptyMessage;
@@ -55,8 +56,12 @@ public class JsonRpcBase {
 
   public static String jsonRpcNode =
       Configuration.getByPath("testng.conf").getStringList("jsonRpcNode.ip.list").get(0);
+  public static String jsonRpcNode1 =
+      Configuration.getByPath("testng.conf").getStringList("jsonRpcNode.ip.list").get(1);
   public static String httpFullNode =
       Configuration.getByPath("testng.conf").getStringList("httpnode.ip.list").get(0);
+  public static String solidityNode =
+      Configuration.getByPath("testng.conf").getStringList("solidityNode.ip.list").get(0);
   public static String ethHttpsNode =
       Configuration.getByPath("testng.conf").getStringList("ethHttpsNode.host.list").get(0);
 
@@ -75,6 +80,7 @@ public class JsonRpcBase {
   public static String trc20AddressByteString;
   public static String trc20AddressHex;
   public static String contractAddressFrom58;
+  public static String contractTrc20AddressFrom58;
   public static String contractAddressFromHex;
   public static ByteString shieldAddressByteString;
   public static byte[] shieldAddressByte;
@@ -101,6 +107,7 @@ public class JsonRpcBase {
   public static String blockId;
   public static String txid;
   public static String trc20Txid;
+  public static String NewFilterId;
 
   /** constructor. */
   @BeforeSuite(enabled = true, description = "Deploy json rpc test case resource")
@@ -302,6 +309,15 @@ public class JsonRpcBase {
 
     PublicMethed.waitProduceNextBlock(blockingStubFull);
     logger.info(deployTrc20Txid);
+    response = HttpMethed.getTransactionById(httpFullNode, deployTrc20Txid);
+    responseContent = HttpMethed.parseResponseContent(response);
+    HttpMethed.printJsonContent(responseContent);
+    org.junit.Assert.assertTrue(!responseContent.getString("contract_address").isEmpty());
+    contractTrc20AddressFrom58 = responseContent.getString("contract_address");
+    logger.info("contractTrc20AddressFrom58:" + contractTrc20AddressFrom58);
+
+    NewFilterId = createNewFilterId();
+
     Optional<TransactionInfo> infoById =
         PublicMethed.getTransactionInfoById(deployTrc20Txid, blockingStubFull);
 
@@ -333,6 +349,21 @@ public class JsonRpcBase {
             (PublicMethed.getTransactionInfoById(trc20Txid, blockingStubFull)
                 .get()
                 .getBlockNumber());
+  }
+
+  /** constructor. */
+  public String createNewFilterId() {
+    JsonObject paramBody = new JsonObject();
+    JsonArray params = new JsonArray();
+    params.add(paramBody);
+    JsonObject requestBody = getJsonRpcBody("eth_newFilter", params);
+    logger.info("createNewFilterId_requestBody " + requestBody);
+    response = getJsonRpc(jsonRpcNode, requestBody);
+    responseContent = HttpMethed.parseResponseContent(response);
+    logger.info("createNewFilterId_responseContent" + responseContent);
+    org.junit.Assert.assertNotNull(responseContent.get("result"));
+    logger.info("NewFilterId:" + responseContent.get("result"));
+    return responseContent.getString("result");
   }
 
   /** constructor. */
