@@ -1,5 +1,6 @@
 package org.tron.core.jsonrpc;
 
+import static org.tron.core.services.jsonrpc.JsonRpcApiUtil.addressCompatibleToByteArray;
 import static org.tron.core.services.jsonrpc.JsonRpcApiUtil.getMethodSign;
 import static org.tron.core.services.jsonrpc.JsonRpcApiUtil.parseEnergyFee;
 
@@ -12,7 +13,9 @@ import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
 import org.tron.common.utils.Commons;
-import org.tron.core.services.jsonrpc.CallArguments;
+import org.tron.core.Wallet;
+import org.tron.core.exception.JsonRpcInvalidParamsException;
+import org.tron.core.services.jsonrpc.types.CallArguments;
 
 
 public class JsonRpcTest {
@@ -82,8 +85,7 @@ public class JsonRpcTest {
   }
 
   private String constructData(String functionSelector, String parameter) {
-    String data = getMethodSign(functionSelector) + parameter;
-    return data;
+    return getMethodSign(functionSelector) + parameter;
   }
 
   @Test
@@ -109,5 +111,29 @@ public class JsonRpcTest {
     Assert.assertEquals(10L, parseEnergyFee(1544724100000L, energyPriceHistory));
     Assert.assertEquals(40L, parseEnergyFee(1606240810000L, energyPriceHistory));
     Assert.assertEquals(140L, parseEnergyFee(1613044810000L, energyPriceHistory));
+  }
+
+  @Test
+  public void testAddressCompatibleToByteArray() {
+    String rawAddress = "548794500882809695a8a687866e76d4271a1abc";
+    byte[] expectedBytes = ByteArray.fromHexString("41" + rawAddress);
+
+    String addressNoPre = "0x" + rawAddress;
+    String addressWithPre = "0x" + Wallet.getAddressPreFixString() + rawAddress;
+
+    try {
+      Assert.assertArrayEquals(expectedBytes, addressCompatibleToByteArray(rawAddress));
+      Assert.assertArrayEquals(expectedBytes, addressCompatibleToByteArray(addressNoPre));
+      Assert.assertArrayEquals(expectedBytes, addressCompatibleToByteArray(addressWithPre));
+    } catch (JsonRpcInvalidParamsException e) {
+      Assert.fail();
+    }
+
+    try {
+      addressCompatibleToByteArray(rawAddress.substring(1));
+    } catch (JsonRpcInvalidParamsException e) {
+      Assert.assertEquals("invalid address hash value", e.getMessage());
+    }
+
   }
 }

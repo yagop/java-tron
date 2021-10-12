@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import com.google.common.primitives.Longs;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -13,13 +14,13 @@ import org.bouncycastle.util.encoders.Hex;
 import org.tron.api.GrpcAPI.AssetIssueList;
 import org.tron.common.crypto.Hash;
 import org.tron.common.parameter.CommonParameter;
+import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
 import org.tron.common.utils.DecodeUtil;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.utils.StringUtil;
 import org.tron.core.Wallet;
-import org.tron.core.capsule.ContractCapsule;
 import org.tron.core.exception.JsonRpcInvalidParamsException;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.Transaction;
@@ -39,7 +40,6 @@ import org.tron.protos.contract.ExchangeContract.ExchangeTransactionContract;
 import org.tron.protos.contract.ExchangeContract.ExchangeWithdrawContract;
 import org.tron.protos.contract.ShieldContract.ShieldedTransferContract;
 import org.tron.protos.contract.SmartContractOuterClass.ClearABIContract;
-import org.tron.protos.contract.SmartContractOuterClass.CreateSmartContract;
 import org.tron.protos.contract.SmartContractOuterClass.TriggerSmartContract;
 import org.tron.protos.contract.SmartContractOuterClass.UpdateEnergyLimitContract;
 import org.tron.protos.contract.SmartContractOuterClass.UpdateSettingContract;
@@ -49,6 +49,7 @@ import org.tron.protos.contract.WitnessContract.VoteWitnessContract.Vote;
 
 @Slf4j(topic = "API")
 public class JsonRpcApiUtil {
+
   public static byte[] convertToTronAddress(byte[] address) {
     byte[] newAddress = new byte[21];
     byte[] temp = new byte[] {Wallet.getAddressPreFixByte()};
@@ -363,22 +364,50 @@ public class JsonRpcApiUtil {
     return amount;
   }
 
-  public static byte[] addressHashToByteArray(String hash) throws JsonRpcInvalidParamsException {
-    byte[] bHash;
+  /**
+   * convert 40 or 42 hex string of address to byte array, compatible with "41"(T) ahead,
+   * padding 0 ahead if length is odd.
+   */
+  public static byte[] addressCompatibleToByteArray(String hexAddress)
+      throws JsonRpcInvalidParamsException {
+    byte[] addressByte;
     try {
-      bHash = ByteArray.fromHexString(hash);
-      if (bHash.length != DecodeUtil.ADDRESS_SIZE / 2
-          && bHash.length != DecodeUtil.ADDRESS_SIZE / 2 - 1) {
+      addressByte = ByteArray.fromHexString(hexAddress);
+      if (addressByte.length != DecodeUtil.ADDRESS_SIZE / 2
+          && addressByte.length != DecodeUtil.ADDRESS_SIZE / 2 - 1) {
         throw new JsonRpcInvalidParamsException("invalid address hash value");
       }
 
-      if (bHash.length == DecodeUtil.ADDRESS_SIZE / 2 - 1) {
-        bHash = ByteUtil.merge(new byte[] {DecodeUtil.addressPreFixByte}, bHash);
+      if (addressByte.length == DecodeUtil.ADDRESS_SIZE / 2 - 1) {
+        addressByte = ByteUtil.merge(new byte[] {DecodeUtil.addressPreFixByte}, addressByte);
       }
     } catch (Exception e) {
       throw new JsonRpcInvalidParamsException(e.getMessage());
     }
-    return bHash;
+    return addressByte;
+  }
+
+  /**
+   * convert 40 hex string of address to byte array, padding 0 ahead if length is odd.
+   */
+  public static byte[] addressToByteArray(String hexAddress) throws JsonRpcInvalidParamsException {
+    byte[] addressByte = ByteArray.fromHexString(hexAddress);
+    if (addressByte.length != DecodeUtil.ADDRESS_SIZE / 2 - 1) {
+      throw new JsonRpcInvalidParamsException("invalid address: " + hexAddress);
+    }
+    byte[] last20Bytes = new DataWord(addressByte).getLast20Bytes();
+    return last20Bytes;
+  }
+
+  /**
+   * check if topic is hex string of size 64, padding 0 ahead if length is odd.
+   */
+  public static byte[] topicToByteArray(String hexTopic) throws JsonRpcInvalidParamsException {
+    byte[] topicByte = ByteArray.fromHexString(hexTopic);
+    if (topicByte.length != 32) {
+      throw new JsonRpcInvalidParamsException("invalid topic: " + hexTopic);
+    }
+    return topicByte;
   }
 
   public static boolean paramStringIsNull(String string) {
@@ -463,5 +492,25 @@ public class JsonRpcApiUtil {
     }
 
     return -1;
+  }
+
+  public static long getByJsonBlockId(String blockNumOrTag) throws JsonRpcInvalidParamsException {
+    if ("pending".equalsIgnoreCase(blockNumOrTag)) {
+      throw new JsonRpcInvalidParamsException("TAG pending not supported");
+    }
+    if (StringUtils.isEmpty(blockNumOrTag) || "latest".equalsIgnoreCase(blockNumOrTag)) {
+      return -1;
+    } else if ("earliest".equalsIgnoreCase(blockNumOrTag)) {
+      return 0;
+    } else {
+      return ByteArray.jsonHexToLong(blockNumOrTag);
+    }
+  }
+
+  public static String generateFilterId() {
+    SecureRandom random = new SecureRandom();
+    byte[] uid = new byte[16]; // 128 bits are converted to 16 bytes
+    random.nextBytes(uid);
+    return ByteArray.toHexString(uid);
   }
 }
