@@ -66,6 +66,8 @@ public class JsonRpcBase {
   public WalletGrpc.WalletBlockingStub blockingStubFull = null;
   public ManagedChannel channelSolidity = null;
   public ManagedChannel channelPbft = null;
+  public String data = null;
+  public String paramString = null;
 
   public WalletSolidityGrpc.WalletSolidityBlockingStub blockingStubSolidity = null;
   public WalletSolidityGrpc.WalletSolidityBlockingStub blockingStubPbft = null;
@@ -176,7 +178,9 @@ public class JsonRpcBase {
     HashMap retMap = PublicMethed.getBycodeAbi(filePath, contractName);
 
     String code = retMap.get("byteCode").toString();
+    System.out.println("CODE:" + code);
     String abi = retMap.get("abI").toString();
+    System.out.println("abi:" + abi);
 
     param.addProperty("abi", abi);
     param.addProperty("data", code);
@@ -196,7 +200,6 @@ public class JsonRpcBase {
 
     responseContent = HttpMethed.parseStringContent(transactionString);
     final String txid = responseContent.getString("txID");
-
     response = HttpMethed.broadcastTransaction(httpFullNode, transactionSignString);
     org.junit.Assert.assertTrue(HttpMethed.verificationResult(response));
 
@@ -207,12 +210,12 @@ public class JsonRpcBase {
 
     org.junit.Assert.assertEquals(beforeTokenBalance - afterTokenBalance, 1L);
 
-    logger.info(txid);
     response = HttpMethed.getTransactionById(httpFullNode, txid);
     responseContent = HttpMethed.parseResponseContent(response);
     HttpMethed.printJsonContent(responseContent);
     org.junit.Assert.assertTrue(!responseContent.getString("contract_address").isEmpty());
     contractAddressFrom58 = responseContent.getString("contract_address");
+    logger.info("contractAddressFrom58:" + contractAddressFrom58);
   }
 
   /** constructor. */
@@ -234,10 +237,13 @@ public class JsonRpcBase {
             + Integer.toHexString(Integer.valueOf(jsonRpcAssetId));
 
     String tokenValueParam = "0000000000000000000000000000000000000000000000000000000000000001";
-    String paramString = addressParam + tokenIdParam + tokenValueParam;
+    paramString = addressParam + tokenIdParam + tokenValueParam;
+    logger.info("paramString:" + paramString);
 
     String selector = "TransferTokenTo(address,trcToken,uint256)";
+    // exit(1);
     param.addProperty("data", "0x" + Util.parseMethod(selector, paramString));
+    data = "0x" + Util.parseMethod(selector, paramString);
     param.addProperty("gas", "0x245498");
     param.addProperty("value", "0x1389");
     param.addProperty("tokenId", Long.valueOf(jsonRpcAssetId));
@@ -254,6 +260,7 @@ public class JsonRpcBase {
 
     responseContent = HttpMethed.parseStringContent(transactionString);
     txid = responseContent.getString("txID");
+    logger.info("triggerTxid:" + txid);
 
     response = HttpMethed.broadcastTransaction(httpFullNode, transactionSignString);
     logger.info("response:" + response);
@@ -305,7 +312,7 @@ public class JsonRpcBase {
             blockingStubFull);
 
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-    logger.info(deployTrc20Txid);
+    logger.info("deployTrc20Txid：" + deployTrc20Txid);
     response = HttpMethed.getTransactionById(httpFullNode, deployTrc20Txid);
     responseContent = HttpMethed.parseResponseContent(response);
     HttpMethed.printJsonContent(responseContent);
@@ -313,7 +320,7 @@ public class JsonRpcBase {
     contractTrc20AddressFrom58 = responseContent.getString("contract_address");
     logger.info("contractTrc20AddressFrom58:" + contractTrc20AddressFrom58);
 
-    NewFilterId = createNewFilterId();
+    //   NewFilterId = createNewFilterId();
 
     Optional<TransactionInfo> infoById =
         PublicMethed.getTransactionInfoById(deployTrc20Txid, blockingStubFull);
@@ -346,21 +353,6 @@ public class JsonRpcBase {
             (PublicMethed.getTransactionInfoById(trc20Txid, blockingStubFull)
                 .get()
                 .getBlockNumber());
-  }
-
-  /** constructor. */
-  public String createNewFilterId() {
-    JsonObject paramBody = new JsonObject();
-    JsonArray params = new JsonArray();
-    params.add(paramBody);
-    JsonObject requestBody = getJsonRpcBody("eth_newFilter", params);
-    logger.info("createNewFilterId_requestBody " + requestBody);
-    response = getJsonRpc(jsonRpcNode, requestBody);
-    responseContent = HttpMethed.parseResponseContent(response);
-    logger.info("createNewFilterId_responseContent" + responseContent);
-    org.junit.Assert.assertNotNull(responseContent.get("result"));
-    logger.info("NewFilterId:" + responseContent.get("result"));
-    return responseContent.getString("result");
   }
 
   /** constructor. */
