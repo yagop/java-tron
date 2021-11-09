@@ -257,7 +257,7 @@ public class JsonRpcBase {
     logger.info("transactionString : " + transactionString);
     String transactionSignString =
         HttpMethed.gettransactionsign(httpFullNode, transactionString, jsonRpcOwnerKey);
-
+    logger.info("transactionSignString:" + transactionSignString);
     responseContent = HttpMethed.parseStringContent(transactionString);
     txid = responseContent.getString("txID");
     logger.info("triggerTxid:" + txid);
