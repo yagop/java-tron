@@ -22,14 +22,14 @@ import org.tron.stresstest.exception.EncodingException;
 @Setter
 public class TriggerJustLendContractCreator extends AbstractTransactionCreator implements GoodCaseTransactonCreator {
 
-  private String ownerAddress = triggerOwnerAddress;
+  private String ownerAddress = triggerRandomTrc20Address;
   private String contractAddress = commonContractAddress4;
   private long callValue = 0L;
   private String methodSign = "borrow(uint256)";
   private boolean hex = false;
   private String param = "1";
   private long feeLimit = 1000000000L;
-  private String privateKey = triggerOwnerKey;
+  private String privateKey = triggerRandomTrc20Key;
   private static AtomicInteger contractIndex = new AtomicInteger(0);
   private Long[] borrow_amount = {
       100000L,
