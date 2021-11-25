@@ -34,7 +34,8 @@ import org.tron.api.WalletGrpc;
 import org.tron.api.WalletGrpc.WalletBlockingStub;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.utils.ByteArray;
-import org.tron.common.utils.Configuration;
+import stest.tron.wallet.common.client.Configuration;
+//import org.tron.common.utils.Configuration;
 import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Account;
@@ -200,11 +201,6 @@ public class StressPrecondition {
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(21L, 1L);
       }
-      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowShieldedTRC20Transaction") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
-        logger.info(getChainParameters.get().getChainParameter(i).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
-        proposalMap.put(39L, 1L);
-      }
       if(getChainParameters.get().getChainParameter(i).getKey().equals("getAdaptiveResourceLimitTargetRatio") && getChainParameters.get().getChainParameter(i).getValue() == 10) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
@@ -213,42 +209,22 @@ public class StressPrecondition {
       if(getChainParameters.get().getChainParameter(i).getKey().equals("getAdaptiveResourceLimitMultiplier") && getChainParameters.get().getChainParameter(i).getValue() == 1000) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
-        proposalMap.put(29L, 20L);
+        proposalMap.put(29L, 999L);
       }
-      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowPBFT") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
+/*      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowPBFT") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(40L, 1L);
-      }
+      }*/
       if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowMarketTransaction") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(44L, 1L);
       }
-      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowTvmIstanbul") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
-        logger.info(getChainParameters.get().getChainParameter(i).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
-        proposalMap.put(41L, 1L);
-      }
-      if(getChainParameters.get().getChainParameter(i).getKey().equals("getMaxCpuTimeOfOneTx") && getChainParameters.get().getChainParameter(i).getValue() == 50) {
-        logger.info(getChainParameters.get().getChainParameter(i).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
-        proposalMap.put(13L, 80L);
-      }
       if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowTransactionFeePool") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(48L, 1L);
-      }
-      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowOptimizeBlackHole") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
-        logger.info(getChainParameters.get().getChainParameter(i).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
-        proposalMap.put(49L, 1L);
-      }
-      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowReceiptsMerkleRoot") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
-        logger.info(getChainParameters.get().getChainParameter(i).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
-        proposalMap.put(50L, 1L);
       }
       if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowNewResourceModel") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
@@ -259,6 +235,28 @@ public class StressPrecondition {
         logger.info(getChainParameters.get().getChainParameter(i).getKey());
         logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
         proposalMap.put(52L, 1L);
+        approveProposalIndex = i;
+      }
+      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowAccountAssetOptimization") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
+        logger.info(getChainParameters.get().getChainParameter(i).getKey());
+        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
+        proposalMap.put(53L, 1L);
+
+      }
+      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowTvmVote") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
+        logger.info(getChainParameters.get().getChainParameter(i).getKey());
+        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
+        proposalMap.put(59L, 1L);
+      }
+      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowTvmCompatibleEvm") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
+        logger.info(getChainParameters.get().getChainParameter(i).getKey());
+        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
+        proposalMap.put(60L, 1L);
+      }
+      if(getChainParameters.get().getChainParameter(i).getKey().equals("getAllowTvmLondon") && getChainParameters.get().getChainParameter(i).getValue() == 0) {
+        logger.info(getChainParameters.get().getChainParameter(i).getKey());
+        logger.info(Long.toString(getChainParameters.get().getChainParameter(i).getValue()));
+        proposalMap.put(63L, 1L);
         approveProposalIndex = i;
       }
     }
