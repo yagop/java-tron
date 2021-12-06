@@ -158,21 +158,22 @@ public class FeeTest02_swapUsdjToTrx_addUSDJ {
     tokensList.put("USDJ_SUN", USDJ_SUN);
     tokensList.put("SUN_TRX", SUN_TRX);
     tokensList.put("testAccount1", WalletClient.encode58Check(testAccountAddress));
-    Map<String, BigInteger> SUNbalanceList = new HashMap<>();
-    /*for
-    for (int i = 0; i < tokens.length; i++) {
-      for (int j = 0; j < accounts.length; j++) {
+    Map<String, BigInteger> tokenbalanceList = new HashMap<>();
+    for (String token : tokensList.keySet()) {
+      for (String account : accountsList.keySet()) {
         transactionExtention = PublicMethed
-            .triggerConstantContractForExtention(WalletClient.decodeFromBase58Check(tokens[i]),
-                "balanceOf(address)", "\"" + accounts[j] + "\"",
+            .triggerConstantContractForExtention(
+                WalletClient.decodeFromBase58Check(tokensList.get(token)),
+                "balanceOf(address)", "\"" + accountsList.get(account) + "\"",
                 false, 0, 0, "0", 0, testAccountAddress, testAccountKey, blockingStubFull);
         Assert.assertEquals("SUCCESS", transactionExtention.getResult().getCode().toString());
-        BigInteger balance_USDJ_SUN = new BigInteger(ByteArray
+        BigInteger balance = new BigInteger(ByteArray
             .toHexString(transactionExtention.getConstantResult(0).toByteArray()), 16);
-        System.out.println("SUNbalance_USDJ_SUN : " + SUNbalance_USDJ_SUN);
+        System.out.println(token + "balance_" + account + " : " + balance);
 
       }
-    }*/
+    }
+
     transactionExtention = PublicMethed
         .triggerConstantContractForExtention(WalletClient.decodeFromBase58Check(SUN),
             "balanceOf(address)", "\"" + USDJ_SUN + "\"",
