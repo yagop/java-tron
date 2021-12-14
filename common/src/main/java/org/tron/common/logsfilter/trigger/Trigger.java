@@ -2,7 +2,9 @@ package org.tron.common.logsfilter.trigger;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
+@ToString()
 public class Trigger {
 
   public static final int BLOCK_TRIGGER = 0;

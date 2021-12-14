@@ -16,6 +16,7 @@ import org.tron.common.logsfilter.EventPluginLoader;
 import org.tron.common.logsfilter.trigger.ContractEventTrigger;
 import org.tron.common.logsfilter.trigger.ContractLogTrigger;
 import org.tron.common.logsfilter.trigger.ContractTrigger;
+import org.tron.common.logsfilter.trigger.Trigger;
 import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.runtime.vm.LogInfo;
 import org.tron.core.config.args.Args;
@@ -189,5 +190,10 @@ public class ContractTriggerCapsule extends TriggerCapsule {
         }
       }
     }
+  }
+
+  @Override
+  public Trigger getTrigger() {
+    return contractTrigger;
   }
 }

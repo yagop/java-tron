@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.tron.common.logsfilter.EventPluginLoader;
 import org.tron.common.logsfilter.trigger.ContractLogTrigger;
+import org.tron.common.logsfilter.trigger.Trigger;
 
 public class ContractLogTriggerCapsule extends TriggerCapsule {
 
@@ -29,5 +30,10 @@ public class ContractLogTriggerCapsule extends TriggerCapsule {
       contractLogTrigger.setFilterNameList(filterNames);
       EventPluginLoader.getInstance().postContractLogTrigger(contractLogTrigger);
     }
+  }
+
+  @Override
+  public Trigger getTrigger() {
+    return contractLogTrigger;
   }
 }

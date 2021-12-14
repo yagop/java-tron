@@ -15,6 +15,7 @@ import org.tron.common.logsfilter.EventPluginLoader;
 import org.tron.common.logsfilter.trigger.InternalTransactionPojo;
 import org.tron.common.logsfilter.trigger.LogPojo;
 import org.tron.common.logsfilter.trigger.TransactionLogTrigger;
+import org.tron.common.logsfilter.trigger.Trigger;
 import org.tron.common.runtime.InternalTransaction;
 import org.tron.common.runtime.ProgramResult;
 import org.tron.common.utils.StringUtil;
@@ -268,5 +269,10 @@ public class TransactionLogTriggerCapsule extends TriggerCapsule {
   @Override
   public void processTrigger() {
     EventPluginLoader.getInstance().postTransactionTrigger(transactionLogTrigger);
+  }
+
+  @Override
+  public Trigger getTrigger() {
+    return transactionLogTrigger;
   }
 }

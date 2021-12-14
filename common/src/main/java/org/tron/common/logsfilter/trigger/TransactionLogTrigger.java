@@ -3,7 +3,9 @@ package org.tron.common.logsfilter.trigger;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
+@ToString(callSuper = true)
 public class TransactionLogTrigger extends Trigger {
 
   @Getter

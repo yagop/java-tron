@@ -1,8 +1,10 @@
 package org.tron.common.logsfilter.capsule;
 
-public class TriggerCapsule {
+import org.tron.common.logsfilter.trigger.Trigger;
 
-  public void processTrigger() {
-    throw new UnsupportedOperationException();
-  }
+public abstract class TriggerCapsule {
+
+  public abstract void processTrigger();
+
+  public abstract Trigger getTrigger();
 }

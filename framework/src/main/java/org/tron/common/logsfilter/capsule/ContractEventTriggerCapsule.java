@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.tron.common.logsfilter.ContractEventParserAbi;
 import org.tron.common.logsfilter.EventPluginLoader;
 import org.tron.common.logsfilter.trigger.ContractEventTrigger;
+import org.tron.common.logsfilter.trigger.Trigger;
 import org.tron.common.runtime.LogEventWrapper;
 import org.tron.protos.contract.SmartContractOuterClass.SmartContract.ABI.Entry;
 
@@ -61,5 +62,10 @@ public class ContractEventTriggerCapsule extends TriggerCapsule {
       contractEventTrigger.setFilterNameList(filterNames);
       EventPluginLoader.getInstance().postContractEventTrigger(contractEventTrigger);
     }
+  }
+
+  @Override
+  public Trigger getTrigger() {
+    return contractEventTrigger;
   }
 }

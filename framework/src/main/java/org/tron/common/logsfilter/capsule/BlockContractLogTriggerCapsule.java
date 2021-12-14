@@ -1,41 +1,26 @@
 package org.tron.common.logsfilter.capsule;
 
 import static org.tron.common.logsfilter.EventPluginLoader.matchFilter;
-import static org.tron.protos.Protocol.Transaction.Contract.ContractType.CreateSmartContract;
 
 import com.google.common.base.Charsets;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
-import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.LinkedBlockingQueue;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.ArrayUtils;
-import org.bouncycastle.util.encoders.Hex;
-import org.pf4j.util.StringUtils;
-import org.tron.common.crypto.Hash;
-import org.tron.common.logsfilter.ContractEventParserAbi;
 import org.tron.common.logsfilter.EventPluginLoader;
 import org.tron.common.logsfilter.trigger.BlockContractLogTrigger;
-import org.tron.common.logsfilter.trigger.ContractEventTrigger;
 import org.tron.common.logsfilter.trigger.ContractLogTrigger;
 import org.tron.common.logsfilter.trigger.ContractTrigger;
-import org.tron.common.runtime.vm.DataWord;
+import org.tron.common.logsfilter.trigger.Trigger;
 import org.tron.common.runtime.vm.LogInfo;
 import org.tron.common.utils.StringUtil;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.TransactionCapsule;
-import org.tron.core.config.args.Args;
-import org.tron.protos.Protocol;
-import org.tron.protos.Protocol.Transaction;
-import org.tron.protos.Protocol.Transaction.Contract.ContractType;
-import org.tron.protos.contract.SmartContractOuterClass.SmartContract.ABI;
 
 public class BlockContractLogTriggerCapsule extends TriggerCapsule {
 
@@ -142,5 +127,10 @@ public class BlockContractLogTriggerCapsule extends TriggerCapsule {
   @Override
   public void processTrigger() {
     EventPluginLoader.getInstance().postBlockContractLogTrigger(blockContractLogTrigger);
+  }
+
+  @Override
+  public Trigger getTrigger() {
+    return blockContractLogTrigger;
   }
 }

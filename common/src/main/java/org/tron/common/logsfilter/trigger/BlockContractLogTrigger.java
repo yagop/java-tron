@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
+@ToString(callSuper = true)
 public class BlockContractLogTrigger extends Trigger {
 
   @Getter
@@ -45,6 +47,7 @@ public class BlockContractLogTrigger extends Trigger {
   }
 
 
+  @ToString
   public class TransactionInBlock {
 
     @Getter
