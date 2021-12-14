@@ -250,16 +250,19 @@ public class Manager {
   private Runnable triggerCapsuleProcessLoop =
       () -> {
         while (isRunTriggerCapsuleProcessThread) {
-          try {
-            TriggerCapsule triggerCapsule = triggerCapsuleQueue.poll(1, TimeUnit.SECONDS);
-            if (triggerCapsule != null) {
+          TriggerCapsule triggerCapsule = triggerCapsuleQueue.peek();
+          if (triggerCapsule != null) {
+            try {
               triggerCapsule.processTrigger();
+              triggerCapsuleQueue.poll();
+            } catch (Throwable throwable) {
+              logger.error("unknown throwable happened in process capsule loop:{}", triggerCapsule.getTrigger(), throwable);
+              try {
+                Thread.currentThread().sleep(3000);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              }
             }
-          } catch (InterruptedException ex) {
-            logger.info(ex.getMessage());
-            Thread.currentThread().interrupt();
-          } catch (Throwable throwable) {
-            logger.error("unknown throwable happened in process capsule loop", throwable);
           }
         }
       };
