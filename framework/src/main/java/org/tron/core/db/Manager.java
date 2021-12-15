@@ -1777,8 +1777,12 @@ public class Manager {
       BlockLogTriggerCapsule blockLogTriggerCapsule = new BlockLogTriggerCapsule(newBlock);
       blockLogTriggerCapsule.setLatestSolidifiedBlockNumber(getDynamicPropertiesStore()
           .getLatestSolidifiedBlockNum());
-      if (!triggerCapsuleQueue.offer(blockLogTriggerCapsule)) {
-        logger.info("too many triggers, block trigger lost: {}", newBlock.getBlockId());
+      try {
+        triggerCapsuleQueue.put(blockLogTriggerCapsule);
+      } catch (InterruptedException e){
+        logger.info("too many triggers, block trigger lost: {}", blockLogTriggerCapsule.getTrigger());
+        Thread.currentThread().interrupt();
+        return;
       }
     }
 
@@ -1862,8 +1866,11 @@ public class Manager {
         index, preCumulativeEnergyUsed, cumulativeLogCount, transactionInfo, energyUnitPrice);
     trx.setLatestSolidifiedBlockNumber(getDynamicPropertiesStore()
         .getLatestSolidifiedBlockNum());
-    if (!triggerCapsuleQueue.offer(trx)) {
-      logger.info("too many triggers, transaction trigger lost: {}", trxCap.getTransactionId());
+    try {
+      triggerCapsuleQueue.put(trx);
+    } catch (InterruptedException e){
+      logger.info("too many triggers, transaction trigger lost: {}", trx);
+      Thread.currentThread().interrupt();
     }
 
     return trx.getTransactionLogTrigger().getEnergyUsageTotal();
@@ -1875,8 +1882,11 @@ public class Manager {
     TransactionLogTriggerCapsule trx = new TransactionLogTriggerCapsule(trxCap, blockCap);
     trx.setLatestSolidifiedBlockNumber(getDynamicPropertiesStore()
         .getLatestSolidifiedBlockNum());
-    if (!triggerCapsuleQueue.offer(trx)) {
-      logger.info("too many triggers, transaction trigger lost: {}", trxCap.getTransactionId());
+    try {
+      triggerCapsuleQueue.put(trx);
+    } catch (InterruptedException e){
+      logger.info("too many triggers, transaction trigger lost: {}", trx);
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -1915,9 +1925,11 @@ public class Manager {
             .getLatestSolidifiedBlockNum());
         contractTriggerCapsule.setBlockHash(blockHash);
 
-        if (!triggerCapsuleQueue.offer(contractTriggerCapsule)) {
-          logger
-              .info("too many triggers, contract log trigger lost: {}", trigger.getTransactionId());
+        try {
+          triggerCapsuleQueue.put(contractTriggerCapsule);
+        } catch (InterruptedException e){
+          logger.info("too many triggers, contract trigger lost: {}", contractTriggerCapsule.getTrigger());
+          Thread.currentThread().interrupt();
         }
       }
     }
@@ -2000,8 +2012,11 @@ public class Manager {
         new BlockContractLogTriggerCapsule(blockCapsule, getDynamicPropertiesStore()
         .getLatestSolidifiedBlockNum());
 
-    if (!triggerCapsuleQueue.offer(blockContractLogTriggerCapsule)) {
-      logger.info("too many triggers, BlockContractLog trigger lost: {}", blockCapsule.getBlockId());
+    try {
+      triggerCapsuleQueue.put(blockContractLogTriggerCapsule);
+    } catch (InterruptedException e){
+      logger.info("too many triggers, BlockContractLog trigger lost: {}", blockContractLogTriggerCapsule.getTrigger());
+      Thread.currentThread().interrupt();
     }
   }
 }
