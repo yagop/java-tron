@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import org.iq80.leveldb.Options;
 import org.rocksdb.ComparatorOptions;
-import org.rocksdb.DirectComparator;
+import org.rocksdb.AbstractComparator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,6 +17,7 @@ import org.tron.core.capsule.MarketOrderIdListCapsule;
 import org.tron.core.capsule.utils.MarketUtils;
 import org.tron.core.db.TronStoreWithRevoking;
 import org.tron.core.exception.ItemNotFoundException;
+import org.rocksdb.AbstractComparator;
 
 @Component
 public class MarketPairPriceToOrderStore extends TronStoreWithRevoking<MarketOrderIdListCapsule> {
@@ -35,7 +36,7 @@ public class MarketPairPriceToOrderStore extends TronStoreWithRevoking<MarketOrd
 
   //todo: to test later
   @Override
-  protected DirectComparator getDirectComparator() {
+  protected AbstractComparator getDirectComparator() {
     ComparatorOptions comparatorOptions = new ComparatorOptions();
     return new MarketOrderPriceComparatorForRockDB(comparatorOptions);
   }
